@@ -268,7 +268,7 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-const APP_VERSION='202611121246';
+const APP_VERSION='202611121016';
 async function chequearVersion(){ try{ if(location.protocol==='file:') return; const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'}); const nueva=(await r.text()).trim();
   if(nueva&&nueva!==APP_VERSION){ const u=new URL(location.href); if(u.searchParams.get('v')===nueva) return; u.searchParams.set('v',nueva); location.replace(u.toString()); } }catch(e){} }
 chequearVersion();
@@ -571,7 +571,8 @@ function cuerpoInicio(){
   ${cs.length?`<div class="list">${cs.map(c=>{ const u=stockEn(c.id).reduce((a,s)=>a+s.cant,0); return `<button class="item" data-go="caja" data-id="${esc(c.id)}"><span class="ic">${ico('box',22,'stroke:#000;stroke-width:2')}</span><span class="tx"><b>${esc(c.nombre)}</b><span>${esc(c.lugar||'Sin lugar')}</span></span><span class="n"><b>${u}</b><span>${u===1?'unidad':'unidades'}</span></span></button>`; }).join('')}</div>
    <button class="link acc" data-go="nuevaCaja" style="margin-top:4px">+ Nueva caja</button>`
    :`<div class="empty"><b>Todavía no hay cajas</b><p>Creá la primera, imprimí su etiqueta y pegala en la caja o el estante.</p><button class="btn pri big" data-go="nuevaCaja">${ico('plus',20)}Crear la primera caja</button></div>`}
-  ${movs.length?`<div class="sec"><h2>Actividad</h2><button class="link acc" style="padding:0" data-go="actividad">Ver toda</button></div><ol class="feed">${movs.map(textoMov).join('')}</ol>`:''}`;
+  ${movs.length?`<div class="sec"><h2>Actividad</h2><button class="link acc" style="padding:0" data-go="actividad">Ver toda</button></div><ol class="feed">${movs.map(textoMov).join('')}</ol>`:''}
+  <p class="help" style="text-align:center;margin:28px 0 90px;color:#c9c7c7">Versión ${APP_VERSION.slice(6,8)}/${APP_VERSION.slice(4,6)} ${APP_VERSION.slice(8,10)}:${APP_VERSION.slice(10,12)}</p>`;
 }
 function cuerpoCajas(cs,unid){
   return `<div class="sec" style="margin-top:14px"><span class="m">${cs.length} ${cs.length===1?'caja':'cajas'}</span><span class="m">${unidades(unid)}</span></div>
@@ -805,25 +806,29 @@ async function completarDesdeCatalogo(){
 }
 
 /* ============ Pip de lector y vibración al escanear ============ */
-let audioCtx=null;
-function prepararAudio(){ try{ if(!audioCtx){ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; audioCtx=new AC(); }
-  if(audioCtx.state==='suspended') audioCtx.resume(); }catch(e){} }
-// iOS solo deja sonar el audio después de un toque: lo "despertamos" con el primero.
-['pointerdown','touchend','click'].forEach(ev=>document.addEventListener(ev,prepararAudio,{passive:true,capture:true}));
-function tono(f,t0,dur,vol){ const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='square'; o.frequency.value=f;
-  g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+0.005); g.gain.setValueAtTime(vol,t0+dur-0.015); g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
-  o.connect(g).connect(audioCtx.destination); o.start(t0); o.stop(t0+dur+0.02); }
+// En iPhone el audio "web" se calla con el modo silencio; un <audio> común suena igual.
+// Armamos los pips como archivos WAV en memoria y los "despertamos" con el primer toque.
+function wavPip(tonos){ const sr=22050; const tot=tonos.reduce((a,t)=>Math.max(a,t[1]+t[2]),0); const n=Math.ceil(sr*(tot+0.02));
+  const buf=new ArrayBuffer(44+n*2), v=new DataView(buf); const w=(o,str)=>{ for(let i=0;i<str.length;i++) v.setUint8(o+i,str.charCodeAt(i)); };
+  w(0,'RIFF'); v.setUint32(4,36+n*2,true); w(8,'WAVE'); w(12,'fmt '); v.setUint32(16,16,true); v.setUint16(20,1,true); v.setUint16(22,1,true); v.setUint32(24,sr,true); v.setUint32(28,sr*2,true); v.setUint16(32,2,true); v.setUint16(34,16,true); w(36,'data'); v.setUint32(40,n*2,true);
+  for(let i=0;i<n;i++){ const t=i/sr; let x=0; for(const [f,t0,d,vol] of tonos){ if(t>=t0&&t<t0+d){ const k=t-t0, env=Math.min(1,k/0.004,(d-k)/0.012); x+=vol*env*(Math.sin(2*Math.PI*f*k)>0?1:-1)*0.6+vol*env*0.4*Math.sin(2*Math.PI*f*k); } }
+    v.setInt16(44+i*2,Math.max(-1,Math.min(1,x))*32767,true); }
+  return URL.createObjectURL(new Blob([buf],{type:'audio/wav'})); }
+const SONIDOS={ ok:null, mal:null }; let sonidosListos=false;
+function prepararSonidos(){ if(sonidosListos) return; sonidosListos=true;
+  try{ if(navigator.audioSession) navigator.audioSession.type='playback'; }catch(e){}
+  try{ SONIDOS.ok=new Audio(wavPip([[2700,0,0.1,0.5]])); SONIDOS.mal=new Audio(wavPip([[440,0,0.12,0.45],[330,0.16,0.18,0.45]]));
+    for(const a of Object.values(SONIDOS)){ a.preload='auto'; a.muted=true; const pr=a.play(); if(pr) pr.then(()=>{ a.pause(); a.currentTime=0; a.muted=false; }).catch(()=>{ a.muted=false; sonidosListos=false; }); else a.muted=false; } }catch(e){ sonidosListos=false; } }
+['pointerdown','touchend','click'].forEach(ev=>document.addEventListener(ev,prepararSonidos,{passive:true,capture:true}));
 let hapticSw=null;
 function vibrar(patron){
   if(navigator.vibrate){ try{ if(navigator.vibrate(patron)) return; }catch(e){} }
-  // iPhone (iOS 18+): Safari no tiene vibrate, pero un interruptor nativo da un toque háptico.
-  try{ if(!hapticSw){ const l=document.createElement('label'); l.setAttribute('aria-hidden','true'); l.style.cssText='position:fixed;left:-9999px;width:1px;height:1px;overflow:hidden';
+  try{ if(!hapticSw){ const l=document.createElement('label'); l.setAttribute('aria-hidden','true'); l.style.cssText='position:fixed;left:0;bottom:0;width:1px;height:1px;opacity:0;overflow:hidden';
       const i=document.createElement('input'); i.type='checkbox'; i.setAttribute('switch',''); i.tabIndex=-1; l.appendChild(i); document.body.appendChild(l); hapticSw=l; }
-    const n=Array.isArray(patron)?Math.ceil(patron.length/2):1; for(let k=0;k<n;k++) setTimeout(()=>hapticSw.click(),k*120); }catch(e){}
+    hapticSw.click(); }catch(e){}
 }
 function pip(mal){
-  try{ prepararAudio(); if(audioCtx&&audioCtx.state==='running'){ const t=audioCtx.currentTime+0.01;
-    if(mal){ tono(440,t,0.12,0.12); tono(330,t+0.16,0.18,0.12); } else tono(2800,t,0.09,0.09); } }catch(e){}
+  const a=mal?SONIDOS.mal:SONIDOS.ok; if(a){ try{ a.currentTime=0; const pr=a.play(); if(pr) pr.catch(()=>{}); }catch(e){} }
   vibrar(mal?[60,60,60]:50);
 }
 
