@@ -488,8 +488,7 @@ ingreso:{ html(){
   </div>
   ${ed?'':`<div class="dark"><span class="lbl">Dónde la guardás</span><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${selectorCaja('destino',f.destino,{oscuro:true})}</div></div>`}
   <div class="card"><span class="lbl">Foto y medidas <span class="opt">· opcional</span></span>
-   <button type="button" class="drop${f.foto&&!f._subiendo?' con':''}" data-act="foto">${f._subiendo?esc(f._subiendo):f.foto?`<img src="${f._prev||fotoUrl(f.foto)}" alt="Foto cargada">`:ico('cam',22)+'Sacar foto'}</button>
-   ${f.foto&&!f._subiendo?`<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:-6px">${f._orig?`<button type="button" class="link" style="padding:4px 0" data-act="fotoAlterna">${f._sinFondo?'Usar la foto original':'Sacarle el fondo'}</button>`:''}<button type="button" class="link" style="padding:4px 0" data-act="foto">Sacar otra</button></div>`:''}
+   <div id="fotoZona" style="display:flex;flex-direction:column;gap:10px">${fotoHTML(f)}</div>
    <div class="grid3">${[['alto','Alto'],['ancho','Ancho'],['prof','Prof.']].map(([k,l])=>`<div class="f"><label for="${k}" style="font-size:12.5px;color:#464646">${l} (mm)</label><input class="in" id="${k}" data-f="${k}" inputmode="decimal" value="${esc(f[k])}"></div>`).join('')}</div>
    <div class="f" style="max-width:50%"><label for="peso" style="font-size:12.5px;color:#464646">Peso (g)</label><input class="in" id="peso" data-f="peso" inputmode="decimal" value="${esc(f.peso)}"></div>
   </div>
@@ -667,14 +666,16 @@ const ACCIONES={
   back, manual(){ const v=(V.f.manual||'').trim(); if(!v){ toast('Escribí un código.'); return; } manejarCodigo(v); },
   sinCodigo(){ const it=scanIntent; scanIntent={tipo:'abrir'}; salir(); while(V.view==='escanear'||V.view==='camara') V=pila.pop()||{view:'inicio',p:{},f:{}}; go('ingreso',{codigo:'',caja:it.caja||(V.view==='caja'?V.p.id:'')||''}); },
   escribirEn(){ scanIntent={tipo:'guardarEn',caja:V.p.id}; go('escanear',{}); },
-  foto(){ $('#fotoIn').click(); },
+  foto(){ $('#fotoIn').click(); calentarRecortador(); },
   aMano(){ go('escanear',{}); },
   async fotoAlterna(){ const vista=V, f=vista.f; const usarCut=!f._sinFondo;
-    if(usarCut&&!f._cut){ try{ f._subiendo='Sacando el fondo…'; render(); const png=await sacarFondo(f._orig); f._cut=await encuadrar(png,{transparente:true}); }catch(e){ f._cut=null; } if(!f._cut){ toast('No pude sacar el fondo de esta foto.'); f._subiendo=0; render(); return; } }
-    try{ await subirFotoBlob(vista,usarCut?f._cut:f._orig,usarCut); }catch(e){ toast('No se pudo subir la foto.'); }
-    f._subiendo=0; if(V===vista) render(); },
-  guardarNombre(){ const n=(V.f.minombre||'').trim(); if(!n){ toast('Escribí tu nombre.'); return; } miNombre=n.slice(0,40); lsSet('muestras-nombre',miNombre); render(); },
+    try{
+      if(usarCut&&!f._cut){ f._bg='Sacando el fondo…'; pintarFoto(vista); const png=await sacarFondo(f._orig); f._cut=await encuadrar(png,{transparente:true}); if(!f._cut) throw new Error('vacío'); }
+      f._bg='Guardando…'; pintarFoto(vista); await subirFotoBlob(vista,usarCut?f._cut:f._orig,usarCut);
+    }catch(e){ toast(usarCut?'No pude sacar el fondo de esta foto.':'No se pudo subir la foto.'); }
+    f._bg=null; pintarFoto(vista); },
   async guardarIngreso(){
+    if(V.f._bgP&&V.f._bg){ const vista=V; overlay(spinner('Terminando la foto…')); await Promise.race([vista.f._bgP,new Promise(r=>setTimeout(r,30000))]); overlay(null); if(V!==vista) return; }
     const f=V.f, ed=!!V.p.editar; const nombre=(f.nombre||'').trim(); if(!nombre){ toast('Escribí el nombre del producto.'); $('#nombre')?.focus(); return; }
     const cant=Math.max(1,parseInt(f.cant,10)||1); if(!ed&&!f.destino){ toast('Elegí en qué caja la guardás.'); return; }
     const codigo=V.p.codigo||('MU-'+rid(5));
@@ -740,11 +741,23 @@ document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.id==='manu
 function refrescarBoton(){ if(['ingreso','agregar','mover'].includes(V.view)){ const y=window.scrollY; const act=document.activeElement?.id; render(); window.scrollTo(0,y); if(act&&act!=='cant'){ const el=$('#'+act); el&&el.focus(); } } }
 $('#cam').addEventListener('change',alElegirFoto); $('#gal').addEventListener('change',alElegirFoto);
 /* ============ Foto del producto: sacar el fondo y encuadrar ============ */
-let bgMod=null;
+// El recorte corre en el celular. Con WebGPU (placa de video) tarda 1-3 s; sin ella, en el procesador.
+// La foto original se sube al instante y el recorte se hace de fondo, sin frenar la carga.
+let bgMod=null, gpuOk=null, calentado=null;
+async function hayGPU(){ if(gpuOk!==null) return gpuOk; try{ gpuOk=!!(navigator.gpu&&await navigator.gpu.requestAdapter()); }catch(e){ gpuOk=false; } return gpuOk; }
+const bgCfg=gpu=>({model:gpu?'isnet_fp16':'isnet_quint8',device:gpu?'gpu':'cpu',output:{format:'image/png'}});
 async function sacarFondo(blob,onProg){
   if(!bgMod) bgMod=import('./vendor/bgremoval.mjs').catch(e=>{ bgMod=null; throw e; });
   const {removeBackground}=await bgMod;
-  return await removeBackground(blob,{model:'isnet_quint8',output:{format:'image/png'},progress:(k,c,t)=>{ if(onProg&&t&&/fetch/.test(k)) onProg(c/t); }});
+  const prog=(k,c,t)=>{ if(onProg&&t&&/fetch/.test(k)) onProg(c/t); };
+  if(await hayGPU()){ try{ return await removeBackground(blob,{...bgCfg(true),progress:prog}); }catch(e){ console.warn('GPU falló, sigo con CPU',e); gpuOk=false; } }
+  return await removeBackground(blob,{...bgCfg(false),progress:prog});
+}
+function calentarRecortador(){
+  if(calentado) return calentado;
+  const c=document.createElement('canvas'); c.width=c.height=64; const g=c.getContext('2d'); g.fillStyle='#888'; g.fillRect(0,0,64,64);
+  calentado=new Promise(ok=>c.toBlob(ok,'image/jpeg')).then(b=>sacarFondo(b)).catch(()=>{ calentado=null; });
+  return calentado;
 }
 async function encuadrar(blob,{transparente}={}){
   const img=await abrirImagen(blob); const w=img.width,h=img.height;
@@ -761,32 +774,48 @@ async function encuadrar(blob,{transparente}={}){
   og.fillStyle='#f2f2f2'; og.fillRect(0,0,o.width,o.height); og.drawImage(c,x0,y0,cw,ch,0,0,o.width,o.height);
   return await new Promise(ok=>o.toBlob(b=>ok(b),'image/jpeg',.86));
 }
+function fotoHTML(f){
+  if(f._subiendo&&!f.foto) return `<button type="button" class="drop" data-act="foto">${esc(f._subiendo)}</button>`;
+  if(!f.foto) return `<button type="button" class="drop" data-act="foto">${ico('cam',22)}Sacar foto</button>`;
+  const estado=f._bg?`<span class="tag" style="align-self:flex-start;display:inline-flex;gap:6px;align-items:center"><svg class="spin" viewBox="0 0 100 100" aria-hidden="true" style="width:14px;height:14px;margin:0"><path d="${SOL}" fill="#a35e47"/></svg>${esc(f._bg)}</span>`:'';
+  const alt=!f._bg&&f._orig?`<button type="button" class="link" style="padding:4px 0" data-act="fotoAlterna">${f._sinFondo?'Usar la foto original':'Sacarle el fondo'}</button>`:'';
+  return `<button type="button" class="drop con" data-act="foto"><img src="${f._prev||fotoUrl(f.foto)}" alt="Foto cargada"></button>${estado}
+   <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:-6px">${alt}<button type="button" class="link" style="padding:4px 0" data-act="foto">Sacar otra</button></div>`;
+}
+function pintarFoto(vista){ if(V!==vista) return; const z=$('#fotoZona'); if(z) z.innerHTML=fotoHTML(vista.f); }
 async function subirFotoBlob(vista,blob,sinFondo){
-  vista.f._subiendo='Subiendo foto…'; if(V===vista) render();
   const r=await call('subirFoto',await aBase64(blob),'image/jpeg','muestra-'+(vista.p.codigo||'')+(sinFondo?'-sinfondo':'')+'.jpg');
   if(vista.f._prev) URL.revokeObjectURL(vista.f._prev);
   vista.f.foto=r.id; vista.f._prev=URL.createObjectURL(blob); vista.f._sinFondo=sinFondo;
 }
-async function procesarFoto(vista,file){
-  vista.f._subiendo='Preparando la foto…'; if(V===vista) render();
-  const chica=await achicarFoto(file);
-  const orig=await encuadrar(chica,{}); vista.f._orig=orig;
-  let final=null;
+async function recortarDeFondo(vista,chica,token){
+  const f=vista.f; const vivo=()=>f._token===token;
   try{
-    const setMsg=t=>{ vista.f._subiendo=t; const el=document.querySelector('.drop'); if(V===vista&&el) el.textContent=t; };
-    setMsg('Sacando el fondo…');
-    const png=await sacarFondo(chica,p=>setMsg(`Descargando el recortador… ${Math.round(p*100)}% (solo la primera vez)`));
-    setMsg('Encuadrando…');
-    final=await encuadrar(png,{transparente:true}); vista.f._cut=final;
-  }catch(e){ console.warn(e); final=null; }
-  if(!final){ toast('No pude sacar el fondo: quedó la foto original.'); await subirFotoBlob(vista,orig,false); }
-  else await subirFotoBlob(vista,final,true);
+    f._bg='Sacando el fondo…'; pintarFoto(vista);
+    const png=await sacarFondo(chica,p=>{ if(vivo()){ f._bg=`Bajando el recortador ${Math.round(p*100)}% (solo la primera vez)`; pintarFoto(vista); } });
+    if(!vivo()) return;
+    const cut=await encuadrar(png,{transparente:true}); if(!vivo()) return;
+    if(!cut) throw new Error('vacío');
+    f._cut=cut; f._bg='Guardando el recorte…'; pintarFoto(vista);
+    await subirFotoBlob(vista,cut,true);
+  }catch(e){ console.warn(e); if(vivo()) toast('No pude sacar el fondo: quedó la foto original.'); }
+  if(vivo()){ f._bg=null; pintarFoto(vista); }
+}
+async function procesarFoto(vista,file){
+  const f=vista.f, token=Symbol(); f._token=token; f._cut=null;
+  f._subiendo='Preparando la foto…'; if(!f.foto) pintarFoto(vista);
+  const chica=await achicarFoto(file);
+  const orig=await encuadrar(chica,{}); f._orig=orig;
+  f._bg='Subiendo foto…'; pintarFoto(vista);
+  await subirFotoBlob(vista,orig,false);
+  f._subiendo=0;
+  f._bgP=recortarDeFondo(vista,chica,token);
 }
 $('#fotoIn').addEventListener('change',async e=>{
   const file=e.target.files&&e.target.files[0]; e.target.value=''; if(!file) return;
-  const vista=V;
-  try{ await procesarFoto(vista,file); }catch(err){ toast('No se pudo subir la foto.'); }
-  vista.f._subiendo=0; if(V===vista) render();
+  const vista=V; calentarRecortador();
+  try{ await procesarFoto(vista,file); }catch(err){ vista.f._subiendo=0; vista.f._bg=null; toast('No se pudo subir la foto.'); }
+  pintarFoto(vista);
 });
 
 /* ============ Arranque ============ */
