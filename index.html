@@ -209,6 +209,9 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 .d-card .step input{color:#fff}
 .d-card .step button{background:#3a3a3a;color:#fff}
 .d-card .step button.p{background:#fff;color:#000}
+.shutter{width:76px;height:76px;border-radius:999px;border:4px solid var(--ink);background:var(--paper);padding:5px;cursor:pointer;flex:none}
+.shutter span{display:block;width:100%;height:100%;border-radius:999px;background:var(--acc);transition:transform .2s var(--spring)}
+.shutter:active span{transform:scale(.88)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -218,7 +221,8 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 <nav class="nav" id="nav" aria-label="Secciones"></nav>
 <input type="file" id="cam" accept="image/*" capture="environment" class="sr" tabindex="-1" aria-hidden="true">
 <input type="file" id="gal" accept="image/*" class="sr" tabindex="-1" aria-hidden="true">
-<input type="file" id="fotoIn" accept="image/*" capture="environment" class="sr" tabindex="-1" aria-hidden="true">
+<input type="file" id="fotoIn" accept="image/*" class="sr" tabindex="-1" aria-hidden="true">
+<input type="file" id="galFoto" accept="image/*" class="sr" tabindex="-1" aria-hidden="true">
 <div class="overlay" id="overlay" hidden><div class="box" id="overlayBox"></div></div>
 <div class="toast" id="toast" role="status" hidden></div>
 
@@ -285,7 +289,7 @@ const clientes=()=>{ const set=new Set(); S.productos.forEach(p=>p.cliente&&set.
 const lugares=()=>[...new Set([...S.cajas.values()].map(c=>c.lugar).filter(Boolean))].sort();
 
 /* ============ Navegación ============ */
-function salir(){ if(V.view==='camara') detenerCamara(); }
+function salir(){ if(V.view==='camara'||V.view==='fotoCam') detenerCamara(); }
 function go(view,p={},f={}){ salir(); pila.push(V); V={view,p,f}; render(); window.scrollTo(0,0); if(VIEWS[view].enter) VIEWS[view].enter(); }
 function back(){ salir(); if(V.view==='ingreso') borrarBorrador(); V=pila.pop()||{view:'inicio',p:{},f:{}}; render(); window.scrollTo(0,0); if(VIEWS[V.view]&&VIEWS[V.view].reenter) VIEWS[V.view].reenter(); }
 function home(){ salir(); borrarBorrador(); pila.length=0; V={view:'inicio',p:{},f:{}}; render(); window.scrollTo(0,0); }
@@ -366,8 +370,27 @@ async function iniciarCamara(){
   };
   paso();
 }
+async function iniciarFotoCam(){
+  const video=$('#video'); if(!video) return;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ camError('Este navegador no deja usar la cámara. Elegí la foto de la galería.'); return; }
+  try{ camStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1440}}}); }
+  catch(e){ camError('No pude abrir la cámara. Revisá el permiso o elegí la foto de la galería.'); return; }
+  if(V.view!=='fotoCam'){ detenerCamara(); return; }
+  video.srcObject=camStream; video.setAttribute('playsinline',''); video.muted=true;
+  try{ await video.play(); }catch(e){}
+  camViva=true; camMsg('');
+  try{ const [track]=camStream.getVideoTracks(); const cap=track.getCapabilities&&track.getCapabilities(); if(cap&&cap.focusMode&&cap.focusMode.includes('continuous')) await track.applyConstraints({advanced:[{focusMode:'continuous'}]}); }catch(e){}
+}
+async function disparar(){
+  const video=$('#video'); if(!video||!camViva||!video.videoWidth){ toast('La cámara todavía no está lista.'); return; }
+  const w=video.videoWidth, h=video.videoHeight, k=Math.min(1,1600/Math.max(w,h));
+  const c=document.createElement('canvas'); c.width=Math.round(w*k); c.height=Math.round(h*k); c.getContext('2d').drawImage(video,0,0,c.width,c.height);
+  const blob=await new Promise(ok=>c.toBlob(ok,'image/jpeg',.9)); c.width=c.height=0;
+  detenerCamara(); back();
+  fotoElegida(V,blob);
+}
 function detenerCamara(){ camViva=false; clearTimeout(camTimer); camTimer=null; if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; } }
-document.addEventListener('visibilitychange',()=>{ if(document.hidden&&V.view==='camara') detenerCamara(); else if(!document.hidden&&V.view==='camara'&&!camViva){ render(); iniciarCamara(); } });
+document.addEventListener('visibilitychange',()=>{ const cv=V.view==='camara'||V.view==='fotoCam'; if(document.hidden&&cv) detenerCamara(); else if(!document.hidden&&cv&&!camViva){ render(); (V.view==='camara'?iniciarCamara:iniciarFotoCam)(); } });
 async function alElegirFoto(e){
   const file=e.target.files&&e.target.files[0]; e.target.value=''; if(!file) return;
   overlay(`<svg class="spin" viewBox="0 0 100 100" aria-hidden="true"><path d="${SOL}" fill="#a35e47"/></svg><b>Leyendo el código…</b>`);
@@ -480,6 +503,16 @@ actividad:{ html(){
 }},
 
 /* ---------- Cámara en vivo ---------- */
+fotoCam:{ html(){
+  return `${cabecera()}<h1 class="md">Foto del producto</h1>
+  <div class="cam" id="camBox" style="margin-top:16px"><video id="video" playsinline muted autoplay></video><p class="msg" id="camMsg">Abriendo la cámara…</p></div>
+  <div style="display:flex;align-items:center;justify-content:center;gap:24px;margin-top:16px">
+   <label for="galFoto" class="link" style="min-width:90px;text-align:right">Galería</label>
+   <button type="button" class="shutter" data-act="disparar" aria-label="Sacar la foto"><span></span></button>
+   <span style="min-width:90px"></span></div>
+  <p class="help" style="text-align:center">Apoyalo sobre una mesa, sin la mano, y que entre entero.</p>`;
+}, enter(){ iniciarFotoCam(); }},
+
 camara:{ html(){
   const t={destino:'Escaneá el QR de la caja',guardarEn:'Escaneá lo que guardás en '+cajaNom(scanIntent.caja)}[scanIntent.tipo]||'Escaneá';
   return `${cabecera()}<h1 class="md">${esc(t)}</h1>
@@ -716,7 +749,8 @@ const ACCIONES={
   back, manual(){ const v=(V.f.manual||'').trim(); if(!v){ toast('Escribí un código.'); return; } manejarCodigo(v); },
   sinCodigo(){ const it=scanIntent; scanIntent={tipo:'abrir'}; salir(); while(V.view==='escanear'||V.view==='camara') V=pila.pop()||{view:'inicio',p:{},f:{}}; go('ingreso',{codigo:'',caja:it.caja||(V.view==='caja'?V.p.id:'')||''}); },
   escribirEn(){ scanIntent={tipo:'guardarEn',caja:V.p.id}; go('escanear',{}); },
-  foto(){ guardarBorrador(); $('#fotoIn').click(); },
+  foto(){ guardarBorrador(); go('fotoCam',{}); },
+  disparar(){ disparar(); },
   aMano(){ go('escanear',{}); },
   limpiarQ(){ V.f.q=''; render(); $('#q')?.focus(); },
   async fotoAlterna(){ const vista=V, f=vista.f; const usarCut=!f._sinFondo;
@@ -861,22 +895,22 @@ async function procesarFoto(vista,file){
   f._subiendo=0;
   f._bgP=recortarDeFondo(vista,chica,token);
 }
-$('#fotoIn').addEventListener('change',async e=>{
-  const file=e.target.files&&e.target.files[0]; e.target.value=''; if(!file) return;
-  const vista=V;
+async function fotoElegida(vista,file){
   try{ await procesarFoto(vista,file); }catch(err){ vista.f._subiendo=0; vista.f._bg=null; toast('No se pudo subir la foto.'); }
   pintarFoto(vista);
-});
+}
+$('#fotoIn').addEventListener('change',e=>{ const file=e.target.files&&e.target.files[0]; e.target.value=''; if(file) fotoElegida(V,file); });
+$('#galFoto').addEventListener('change',e=>{ const file=e.target.files&&e.target.files[0]; e.target.value=''; if(!file) return; detenerCamara(); back(); fotoElegida(V,file); });
 
 /* ============ Borrador: si el celular recarga la página al volver de la cámara, no se pierde lo cargado ============ */
 function guardarBorrador(){
   if(V.view!=='ingreso') return;
   const f={}; Object.keys(V.f).forEach(k=>{ if(!k.startsWith('_')||k==='_init'||k==='_otro'||k==='_cat'||k==='_fuente') f[k]=V.f[k]; });
-  try{ sessionStorage.setItem('muestras-borrador',JSON.stringify({at:Date.now(),p:V.p,f,atras:pila.slice(-3).map(v=>({view:v.view,p:v.p}))})); }catch(e){}
+  try{ localStorage.setItem('muestras-borrador',JSON.stringify({at:Date.now(),p:V.p,f,atras:pila.slice(-3).map(v=>({view:v.view,p:v.p}))})); }catch(e){}
 }
-function borrarBorrador(){ try{ sessionStorage.removeItem('muestras-borrador'); }catch(e){} }
+function borrarBorrador(){ try{ localStorage.removeItem('muestras-borrador'); }catch(e){} }
 function recuperarBorrador(){
-  let b=null; try{ b=JSON.parse(sessionStorage.getItem('muestras-borrador')||'null'); }catch(e){}
+  let b=null; try{ b=JSON.parse(localStorage.getItem('muestras-borrador')||'null'); }catch(e){}
   if(!b||Date.now()-b.at>30*60*1000){ borrarBorrador(); return false; }
   pila.length=0; (b.atras||[]).forEach(v=>pila.push({view:v.view,p:v.p||{},f:{}}));
   V={view:'ingreso',p:b.p||{},f:b.f||{}}; render(); toast('Recuperé lo que estabas cargando. Volvé a sacar la foto.');
