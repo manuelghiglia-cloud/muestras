@@ -157,6 +157,58 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 @keyframes barrido{from{transform:translateY(-40px)}to{transform:translateY(40px)}}
 .cam .msg{position:absolute;left:16px;right:16px;bottom:14px;text-align:center;color:#fff;font-size:14px;font-weight:700;text-shadow:0 1px 3px rgb(0 0 0/.6)}
 .cam.err{display:flex;align-items:center;justify-content:center;padding:24px;aspect-ratio:auto;min-height:220px;text-align:center;color:#fff}
+/* --- v2: estructura --- */
+.head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
+.search{margin-top:18px;display:flex;align-items:center;gap:10px;height:56px;padding:0 16px;background:var(--fill);border-radius:16px 16px 4px 4px;border-bottom:2px solid var(--line);transition:border-color .2s var(--ease)}
+.search:focus-within{border-bottom-color:var(--acc)}
+.search input{flex:1;min-width:0;height:100%;border:0;background:transparent;font-size:16px;color:var(--ink);padding:0}
+.search input:focus{outline:none}
+.search input::-webkit-search-cancel-button{-webkit-appearance:none}
+.search .x{border:0;background:var(--fill-2);width:32px;height:32px;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer}
+.sec{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:28px}
+.sec h2{margin:0}
+.sec .m{font-size:13px;color:var(--ink-2);font-variant-numeric:tabular-nums}
+.grp{margin-top:10px;background:var(--fill);border-radius:24px;padding:6px}
+.grp-h{display:flex;align-items:baseline;justify-content:space-between;gap:10px;padding:10px 12px 6px;border:0;background:none;width:100%;text-align:left;color:var(--ink);cursor:pointer;font:inherit}
+.grp-h b{font-size:15px;font-weight:800}
+.grp-h span{font-size:12.5px;color:var(--ink-2)}
+.row-p{display:flex;align-items:center;gap:12px;width:100%;min-height:60px;padding:8px 10px 8px 8px;border:0;border-radius:18px;background:var(--paper);text-align:left;cursor:pointer;color:var(--ink);font:inherit}
+.row-p + .row-p{margin-top:4px}
+.row-p .ph{flex:none;width:44px;height:44px;border-radius:12px;background:var(--fill);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.row-p .ph img{width:100%;height:100%;object-fit:contain}
+.row-p .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.row-p .tx b{font-size:14.5px;font-weight:800;line-height:1.25}
+.row-p .tx span{font-size:12.5px;color:var(--ink-2)}
+.qty{flex:none;min-width:44px;height:34px;border-radius:999px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;padding:0 10px;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+.fab{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));z-index:10;height:60px;padding:0 26px 0 10px;border:0;border-radius:999px;background:var(--ink);color:#fff;display:flex;align-items:center;gap:12px;font-size:16px;font-weight:800;cursor:pointer;box-shadow:0 0 0 6px var(--paper);transition:transform .25s var(--spring)}
+.fab:active{transform:translateX(-50%) scale(.96)}
+.fab .shape{position:relative;width:44px;height:44px;flex:none}
+.fab .shape svg{position:absolute;left:0;top:0}
+.fab .shape .ico{left:12px;top:12px;stroke:#fff}
+.pick{display:flex;gap:8px;align-items:stretch}
+.pick select{flex:1;min-width:0}
+.pick .round{width:52px;height:52px;border-radius:16px;background:var(--acc);color:#fff}
+.tools{display:flex;gap:8px}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.meta span{padding:5px 10px;border-radius:999px;background:var(--fill);font-size:13px;font-weight:600;color:var(--ink-2)}
+.meta span.acc{background:var(--acc-soft);color:var(--acc-ink)}
+.stat-line{margin:8px 0 0;font-size:15px;color:var(--ink-2)}
+.stat-line b{color:var(--ink);font-variant-numeric:tabular-nums}
+.medidas{margin-top:12px;display:flex;align-items:center;justify-content:space-between;gap:12px;background:var(--fill);border-radius:20px;padding:14px 16px}
+.medidas b{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+.medidas span{font-size:13px;color:var(--ink-2)}
+.status{display:flex;align-items:center;gap:8px;font-size:12.5px;font-weight:700;color:var(--acc-ink);min-height:18px}
+.status.muted{color:var(--ink-2);font-weight:600}
+.status svg.spin{width:14px;height:14px;margin:0}
+.save{position:sticky;bottom:calc(12px + env(safe-area-inset-bottom,0px));margin-top:20px;box-shadow:0 0 0 8px var(--paper);width:100%;min-height:56px;font-size:16px}
+.links{display:flex;flex-wrap:wrap;gap:4px 18px;margin-top:10px}
+.foot{margin:26px 4px 0;font-size:12.5px;color:var(--ink-3);font-variant-numeric:tabular-nums}
+.d-card{margin-top:12px;background:var(--ink);color:#fff;border-radius:28px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.d-card .lbl{color:#fff}
+.d-card .step{background:var(--dark-2)}
+.d-card .step input{color:#fff}
+.d-card .step button{background:#3a3a3a;color:#fff}
+.d-card .step button.p{background:#fff;color:#000}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
 </style>
@@ -225,7 +277,7 @@ const cajasOrden=()=>[...S.cajas.entries()].map(([id,c])=>({id,...c})).sort((a,b
 const stockDe=codigo=>[...S.stock.values()].filter(s=>s.codigo===codigo&&s.cant>0);
 const stockEn=caja=>[...S.stock.values()].filter(s=>s.caja===caja&&s.cant>0);
 const totalDe=codigo=>stockDe(codigo).reduce((a,s)=>a+s.cant,0);
-const cajaNom=id=>S.cajas.get(id)?.nombre||'Caja borrada';
+const cajaNom=id=>id?(S.cajas.get(id)?.nombre||'Caja borrada'):'';
 const cajaCorta=id=>{ const n=cajaNom(id); return n.includes(' - ')?'Caja '+n.split(' - ').pop():n; };
 const prodNom=c=>S.productos.get(c)?.nombre||c;
 const clientes=()=>{ const set=new Set(); S.productos.forEach(p=>p.cliente&&set.add(p.cliente)); S.cajas.forEach(c=>{ if(c.nombre?.includes(' - ')) set.add(c.nombre.split(' - ')[0]); });
@@ -357,7 +409,7 @@ function aplicar(d){
   S.movs=d.movs||[];
 }
 function refrescar(){ if(['ingreso','agregar','mover','nuevaCaja','escanear','camara'].includes(V.view)) return;
-  if(V.view==='buscar'){ const r=$('#res'); if(r) r.innerHTML=resultados(); return; }
+  if(V.view==='inicio'&&document.activeElement&&document.activeElement.id==='q'){ const r=$('#res'); if(r) r.innerHTML=resultados(); return; }
   const y=window.scrollY; render(); window.scrollTo(0,y); if(V.view==='etiqueta') dibujarEtiqueta(); }
 async function cargar(){ try{ const d=await call('getData'); aplicar(d); conexion='ok'; refrescar(); }catch(e){ if(conexion!=='ok'){ conexion='sin'; render(); } } }
 async function sondear(){ if(ocupado||document.hidden||conexion==='cargando') return;
@@ -377,132 +429,134 @@ async function achicarFoto(file){
 }
 
 /* ============ Vistas ============ */
-const cabecera=(der='')=>`<div class="top"><button class="round" data-act="back" aria-label="Volver">${ico('back')}</button>${der}</div>`;
-const scanLabel=(intent,cls,html)=>`<button type="button" class="${cls}" data-scan='${esc(JSON.stringify(intent))}'>${html}</button>`;
+const cabecera=(der='')=>`<div class="top"><button class="round" data-act="back" aria-label="Volver">${ico('back')}</button>${der?`<div class="tools">${der}</div>`:''}</div>`;
+const scanLabel=(intent,cls,html,aria)=>`<button type="button" class="${cls}" data-scan='${esc(JSON.stringify(intent))}'${aria?` aria-label="${esc(aria)}"`:''}>${html}</button>`;
+const iconBtn=(attrs,ic,label)=>`<button type="button" class="round" ${attrs} aria-label="${esc(label)}" title="${esc(label)}">${ico(ic,20)}</button>`;
 function stepper(id,val,max){ return `<div class="step" role="group" aria-label="Cantidad"><button type="button" data-step="${id}" data-d="-1" aria-label="Una menos">−</button><input id="${id}" inputmode="numeric" pattern="[0-9]*" value="${esc(val)}" aria-label="Cantidad" ${max?`data-max="${max}"`:''}><button type="button" class="p" data-step="${id}" data-d="1" aria-label="Una más">+</button></div>`; }
-function selectorCaja(campo,valor,{excepto,oscuro}={}){
+function selectorCaja(campo,valor,{excepto,label}={}){
   const cs=cajasOrden().filter(c=>c.id!==excepto);
-  return `<div class="f"><label for="${campo}" class="${oscuro?'sr':''}">Caja</label>
-  <select class="in${oscuro?'':''}" id="${campo}" data-f="${campo}"><option value="">Elegí la caja…</option>${cs.map(c=>`<option value="${esc(c.id)}" ${c.id===valor?'selected':''}>${esc(c.nombre)}${c.lugar?' · '+esc(c.lugar):''}</option>`).join('')}</select></div>
-  ${scanLabel({tipo:'destino',campo},'btn acc',ico('scan',18)+'Escanear el QR de la caja')}`;
+  return `<div class="f"><label for="${campo}" class="lbl">${esc(label||'Caja')}</label><div class="pick">
+  <select class="in" id="${campo}" data-f="${campo}"><option value="">Elegí la caja…</option>${cs.map(c=>`<option value="${esc(c.id)}" ${c.id===valor?'selected':''}>${esc(c.nombre)}</option>`).join('')}</select>
+  ${scanLabel({tipo:'destino',campo},'round',ico('scan',22),'Escanear el QR de la caja')}</div></div>`;
 }
-function filaProd(s,{blanco,mostrarCaja}={}){
-  const p=S.productos.get(s.codigo)||{}; const foto=p.foto?`<img src="${fotoUrl(p.foto)}" alt="" loading="lazy">`:ico('prod',22,'stroke:#6f6d6d;stroke-width:2');
-  const sub=mostrarCaja?`${esc(S.cajas.get(s.caja)?.lugar||'')}${S.cajas.get(s.caja)?.lugar?' · ':''}<b style="color:#8c4e3a">${esc(cajaCorta(s.caja))}</b>`:esc(p.marca?`${p.marca} · ${s.codigo}`:s.codigo);
-  return `<button class="item${blanco?' white':''}" data-go="producto" data-codigo="${esc(s.codigo)}"><span class="ic" style="${blanco?'background:#e8e8e8':''}">${foto}</span><span class="tx"><b>${esc(p.nombre||s.codigo)}</b><span>${sub}</span></span><span class="pill-n">${s.cant}</span></button>`;
+const fotoMini=p=>p&&p.foto?`<img src="${fotoUrl(p.foto)}" alt="" loading="lazy">`:ico('prod',20,'stroke:#6f6d6d;stroke-width:2');
+function filaProd(s,sub){ const p=S.productos.get(s.codigo)||{};
+  return `<button class="row-p" data-go="producto" data-codigo="${esc(s.codigo)}"><span class="ph">${fotoMini(p)}</span><span class="tx"><b>${esc(p.nombre||s.codigo)}</b>${sub?`<span>${sub}</span>`:''}</span><span class="qty">${s.cant}</span></button>`; }
+function grupoCaja(id,filas,{sub}={}){ const c=S.cajas.get(id)||{};
+  return `<div class="grp"><button class="grp-h" data-go="caja" data-id="${esc(id)}"><b>${esc(cajaNom(id))}</b><span>${esc(c.lugar||'')}</span></button>${filas.map(s=>filaProd(s,sub?sub(s):esc(S.productos.get(s.codigo)?.marca||''))).join('')}</div>`; }
+const fab=(intent,texto)=>`${scanLabel(intent,'fab',`<span class="shape">${shape(GALLETA,44,'#a35e47')}<svg class="ico" width="20" height="20" viewBox="0 0 24 24"><path d="${I.scan}"/></svg></span>${esc(texto)}`)}`;
+const unidades=n=>n===1?'1 unidad':`${n} unidades`;
+
+function cuerpoInicio(){
+  const cs=cajasOrden(); const unid=[...S.stock.values()].reduce((a,s)=>a+(s.cant>0?s.cant:0),0);
+  const movs=S.movs.slice(0,3);
+  return `${miNombre?'':`<div class="card" style="background:#f6ece8"><div class="f"><label for="minombre">¿Quién sos?</label><input class="in" id="minombre" data-f="minombre" placeholder="Tu nombre" autocomplete="given-name" value="${esc(V.f.minombre||'')}"></div><button class="btn pri" data-act="guardarNombre">Listo</button><p class="help" style="margin:0">Tu nombre queda en cada movimiento que cargues.</p></div>`}
+  <div class="sec"><h2>Cajas</h2>${cs.length?`<span class="m">${unidades(unid)}</span>`:''}</div>
+  ${cs.length?`<div class="list">${cs.map(c=>{ const u=stockEn(c.id).reduce((a,s)=>a+s.cant,0); return `<button class="item" data-go="caja" data-id="${esc(c.id)}"><span class="ic">${ico('box',22,'stroke:#000;stroke-width:2')}</span><span class="tx"><b>${esc(c.nombre)}</b><span>${esc(c.lugar||'Sin lugar')}</span></span><span class="n"><b>${u}</b><span>${u===1?'unidad':'unidades'}</span></span></button>`; }).join('')}</div>
+   <button class="link acc" data-go="nuevaCaja" style="margin-top:4px">+ Nueva caja</button>`
+   :`<div class="empty"><b>Todavía no hay cajas</b><p>Creá la primera, imprimí su etiqueta y pegala en la caja o el estante.</p><button class="btn pri big" data-go="nuevaCaja">${ico('plus',20)}Crear la primera caja</button></div>`}
+  ${movs.length?`<div class="sec"><h2>Actividad</h2><button class="link acc" style="padding:0" data-go="actividad">Ver toda</button></div><ol class="feed">${movs.map(textoMov).join('')}</ol>`:''}`;
 }
 
 const VIEWS={
-/* ---------- Inicio ---------- */
+/* ---------- Inicio: buscar + cajas ---------- */
 inicio:{ html(){
-  const cs=cajasOrden(); const prods=new Set([...S.stock.values()].filter(s=>s.cant>0).map(s=>s.codigo));
-  const unid=[...S.stock.values()].reduce((a,s)=>a+(s.cant>0?s.cant:0),0);
-  const movs=S.movs.slice(0,12);
-  return `<p class="kicker">Micropack · Diseño</p><h1>Muestras</h1><p class="sub">${miNombre?`Hola, ${esc(miNombre)}. `:''}Qué tenemos y dónde está.</p>
-  ${miNombre?'':`<div class="card" style="background:#f6ece8"><div class="f"><label for="minombre">¿Quién sos?</label><input class="in" id="minombre" data-f="minombre" placeholder="Tu nombre" autocomplete="given-name" value="${esc(V.f.minombre||'')}"></div><button class="btn pri" data-act="guardarNombre">Listo</button><p class="help" style="margin:0">Queda registrado en cada movimiento que cargues.</p></div>`}
-  ${scanLabel({tipo:'abrir'},'scan',`<span class="shape">${shape(GALLETA,64,'#a35e47')}<svg class="ico" width="28" height="28" viewBox="0 0 24 24" style="left:18px;top:18px;stroke:#fff"><path d="${I.scan}"/></svg></span><span><b>Escanear</b><span class="s">QR de una caja o código de un producto</span></span>`)}
-  <button class="searchlink" data-go="buscar">${ico('search',20,'stroke:#000')}<span>¿Tenemos…? Buscá producto, marca o caja</span></button>
-  <div class="stats"><div class="stat"><b>${cs.length}</b><span>Cajas</span></div><div class="stat"><b>${prods.size}</b><span>Productos</span></div><div class="stat"><b>${unid}</b><span>Unidades</span></div></div>
-  <div class="between" style="margin-top:26px"><h2 style="margin:0">Cajas y estantes</h2><button class="link acc" data-go="nuevaCaja" style="padding:8px 0">+ Nueva caja</button></div>
-  ${cs.length?`<div class="list">${cs.map(c=>{ const n=new Set(stockEn(c.id).map(s=>s.codigo)).size; return `<button class="item" data-go="caja" data-id="${esc(c.id)}"><span class="ic">${ico('box',22,'stroke:#000;stroke-width:2')}</span><span class="tx"><b>${esc(c.nombre)}</b><span>${esc(c.lugar||'Sin lugar')}</span></span><span class="n"><b>${n}</b><span>${n===1?'producto':'productos'}</span></span></button>`; }).join('')}</div>`
-   :`<div class="empty"><b>Todavía no hay cajas</b><p>Creá la primera, imprimí su etiqueta con QR y pegala en la caja o el estante. Después escaneás los productos que guardás adentro.</p><button class="btn pri big" data-go="nuevaCaja">${ico('plus',20)}Crear la primera caja</button></div>`}
-  ${movs.length?`<h2>Últimos movimientos</h2><ol class="feed">${movs.map(textoMov).join('')}</ol>`:''}`;
+  const q=V.f.q||'';
+  return `<div class="head"><div><p class="kicker">Micropack · Diseño</p><h1>Muestras</h1></div></div>
+  <div class="search">${ico('search',20,'stroke:#000;flex:none')}<label for="q" class="sr">Buscar muestras</label><input id="q" data-f="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="¿Tenemos…? Producto, marca o caja" value="${esc(q)}">${q?`<button class="x" data-act="limpiarQ" aria-label="Borrar búsqueda">${ico('plus',16,'transform:rotate(45deg)')}</button>`:''}</div>
+  <div id="res">${q.trim()?resultados():cuerpoInicio()}</div>${fab({tipo:'abrir'},'Escanear')}`;
+}},
+
+/* ---------- Actividad completa ---------- */
+actividad:{ html(){
+  return `${cabecera()}<h1 class="md">Actividad</h1>${S.movs.length?`<ol class="feed">${S.movs.map(textoMov).join('')}</ol>`:`<div class="empty"><b>Sin movimientos todavía</b></div>`}`;
 }},
 
 /* ---------- Cámara en vivo ---------- */
 camara:{ html(){
-  const t={destino:'Escaneá el QR de la caja',guardarEn:'Escaneá el producto que guardás en '+esc(cajaNom(scanIntent.caja))}[scanIntent.tipo]||'Escaneá';
-  return `${cabecera(`<span class="tag">Cámara</span>`)}<h1 class="md">${t}</h1>
-  <div class="cam" id="camBox"><video id="video" playsinline muted autoplay></video><div class="marco"><i></i><i></i><i></i><i></i></div><div class="linea"></div><p class="msg" id="camMsg">Abriendo la cámara…</p></div>
+  const t={destino:'Escaneá el QR de la caja',guardarEn:'Escaneá lo que guardás en '+cajaNom(scanIntent.caja)}[scanIntent.tipo]||'Escaneá';
+  return `${cabecera()}<h1 class="md">${esc(t)}</h1>
+  <div class="cam" id="camBox" style="margin-top:16px"><video id="video" playsinline muted autoplay></video><div class="marco"><i></i><i></i><i></i><i></i></div><div class="linea"></div><p class="msg" id="camMsg">Abriendo la cámara…</p></div>
   <div class="btns"><label for="cam" class="btn">${ico('cam',18)}Sacar foto</label><button class="btn" data-act="aMano">Escribir código</button></div>`;
 }, enter(){ iniciarCamara(); }},
 
-/* ---------- Escanear (manual o si falló la foto) ---------- */
+/* ---------- Escribir el código ---------- */
 escanear:{ html(){
   return `${cabecera()}<h1 class="md">${V.p.fallo?'No pude leer el código':'Escribir el código'}</h1>
-  <p class="sub">${V.p.fallo?'Probá de nuevo más cerca, con buena luz y el código derecho. O escribí los números que están abajo de las barras.':'Escribí los números del código de barras, o el nombre de la caja.'}</p>
-  <div class="card"><div class="f"><label for="manual">Código o caja</label><input class="in" id="manual" data-f="manual" inputmode="text" autocomplete="off" placeholder="7791293022510 o HH GLOBAL - E1" value="${esc(V.f.manual||'')}"></div>
-  <button class="btn pri" data-act="manual">Buscar este código</button></div>
-  <div class="btns"><label for="cam" class="btn acc">${ico('cam',18)}Sacar otra foto</label><label for="gal" class="btn">Elegir de la galería</label></div>
-  <div class="empty" style="margin-top:14px"><b style="font-size:18px">¿No tiene código?</b><p>Cargalo igual: la app le asigna un código interno y le podés imprimir una etiqueta.</p><button class="btn pri big" style="margin-top:14px" data-act="sinCodigo">Cargar sin código</button></div>`;
+  <p class="sub">${V.p.fallo?'Probá más cerca, con luz y el código derecho, o escribí los números de abajo de las barras.':'Los números del código de barras, o el nombre de la caja.'}</p>
+  <div class="card"><div class="f"><label for="manual" class="sr">Código o caja</label><input class="in" id="manual" data-f="manual" inputmode="text" autocomplete="off" placeholder="7791293022510" value="${esc(V.f.manual||'')}"></div>
+  <button class="btn pri" data-act="manual">Buscar</button></div>
+  <div class="links"><label for="cam" class="link">Sacar otra foto</label><label for="gal" class="link">Elegir de la galería</label><button class="link" data-act="sinCodigo">Cargar sin código</button></div>`;
 }},
-
-/* ---------- Buscar ---------- */
-buscar:{ html(){
-  return `${cabecera(`<label for="q" class="sr">Buscar muestra</label><input class="in onfill" id="q" data-f="q" type="search" autocomplete="off" placeholder="¿Qué buscás?" value="${esc(V.f.q||'')}" style="flex:1;font-weight:700">`)}<div id="res">${resultados()}</div>`;
-}, enter(){ setTimeout(()=>{ const q=$('#q'); q&&q.focus(); },60); }},
 
 /* ---------- Caja ---------- */
 caja:{ html(){
   const c=S.cajas.get(V.p.id); if(!c) return `${cabecera()}<div class="empty"><b>Esta caja ya no existe</b></div>`;
-  const items=stockEn(V.p.id); const unid=items.reduce((a,s)=>a+s.cant,0);
-  const grupos={}; items.forEach(s=>{ const p=S.productos.get(s.codigo)||{}; const k=[p.cliente,p.proyecto].filter(Boolean).join(' › ')||'Sin proyecto'; (grupos[k]=grupos[k]||[]).push(s); });
-  const ult=Math.max(0,...items.map(s=>s.at||0));
-  return `${cabecera(`<span class="tag">Caja</span>`)}<p class="kicker">${esc(c.lugar||'Sin lugar')}</p><h1 class="md">${esc(c.nombre)}</h1>
-  <div class="dark"><div class="stats3"><div><b>${new Set(items.map(s=>s.codigo)).size}</b><span>productos</span></div><div><b>${unid}</b><span>unidades</span></div><div><b style="font-size:20px;line-height:1.7">${ult?esc(cuando(ult)):'—'}</b><span>último cambio</span></div></div></div>
-  ${puedeEscribir?`<div class="btns">${scanLabel({tipo:'guardarEn',caja:V.p.id},'btn pri',ico('plus',20)+'Guardar acá')}<button class="btn" data-go="etiqueta" data-id="${esc(V.p.id)}">${ico('tag',20)}Etiqueta</button></div>
-  <p class="help">“Guardar acá” abre la cámara: sacale foto al código del producto que metés en esta caja.</p>`:''}
-  <h2>Qué hay adentro</h2>
-  ${items.length?Object.entries(grupos).sort().map(([k,arr])=>`<div class="group"><div class="between"><b style="font-size:15px">${esc(k)}</b><span style="font-size:12.5px;font-weight:700;color:#8c4e3a">${arr.reduce((a,s)=>a+s.cant,0)} u.</span></div><div class="list">${arr.sort((a,b)=>prodNom(a.codigo).localeCompare(prodNom(b.codigo),'es')).map(s=>filaProd(s,{blanco:true})).join('')}</div></div>`).join('')
-   :`<div class="empty"><b>Está vacía</b><p>Tocá “Guardar acá” y escaneá los productos que metas.</p></div>`}
-  ${puedeEscribir?`<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px"><button class="link" data-go="nuevaCaja" data-id="${esc(V.p.id)}">Cambiar nombre o lugar</button><button class="link" data-act="escribirEn">Cargar sin escanear</button></div>`:''}`;
+  const items=stockEn(V.p.id); const unid=items.reduce((a,s)=>a+s.cant,0); const nprod=new Set(items.map(s=>s.codigo)).size;
+  const grupos={}; items.forEach(s=>{ const p=S.productos.get(s.codigo)||{}; const k=[p.cliente,p.proyecto].filter(Boolean).join(' · ')||'Sin proyecto'; (grupos[k]=grupos[k]||[]).push(s); });
+  return `${cabecera(iconBtn(`data-go="etiqueta" data-id="${esc(V.p.id)}"`,'tag','Etiqueta')+iconBtn(`data-go="nuevaCaja" data-id="${esc(V.p.id)}"`,'edit','Editar caja'))}
+  <p class="kicker">${esc(c.lugar||'Sin lugar')}</p><h1 class="md">${esc(c.nombre)}</h1>
+  ${items.length?`<p class="stat-line"><b>${nprod}</b> ${nprod===1?'producto':'productos'}, <b>${unid}</b> ${unid===1?'unidad':'unidades'}</p>`:''}
+  ${items.length?Object.entries(grupos).sort().map(([k,arr])=>`<div class="grp"><div class="grp-h" style="cursor:default"><b>${esc(k)}</b><span>${unidades(arr.reduce((a,s)=>a+s.cant,0))}</span></div>${arr.sort((a,b)=>prodNom(a.codigo).localeCompare(prodNom(b.codigo),'es')).map(s=>filaProd(s,esc(S.productos.get(s.codigo)?.marca||''))).join('')}</div>`).join('')
+   :`<div class="empty"><b>Está vacía</b><p>Tocá “Guardar acá” y escaneá los productos que metas en esta caja.</p></div>`}
+  ${fab({tipo:'guardarEn',caja:V.p.id},'Guardar acá')}`;
 }},
 
 /* ---------- Producto ---------- */
 producto:{ html(){
   const c=V.p.codigo, p=S.productos.get(c); if(!p) return `${cabecera()}<div class="empty"><b>No encontré ese producto</b></div>`;
   const st=stockDe(c).sort((a,b)=>b.cant-a.cant), tot=st.reduce((a,s)=>a+s.cant,0);
-  const med=[['Alto',p.alto,'mm'],['Ancho',p.ancho,'mm'],['Profundidad',p.prof,'mm'],['Peso',p.peso,'g']].filter(m=>m[1]);
+  const dims=[p.alto,p.ancho,p.prof].filter(Boolean);
+  const meta=[p.cliente&&`<span class="acc">${esc(p.cliente)}</span>`,p.marca&&`<span>${esc(p.marca)}</span>`,p.proyecto&&`<span>${esc(p.proyecto)}</span>`].filter(Boolean).join('');
   const hist=V.f.hist;
-  return `${cabecera(`<span class="tag">Producto</span>`)}
-  <div class="photo">${p.foto?`<img src="${fotoUrl(p.foto)}" alt="Foto de ${esc(p.nombre)}">`:shape(GALLETA,150,'#e8e8e8')}</div>
-  <p class="kicker" style="margin-top:18px;font-variant-numeric:tabular-nums;letter-spacing:.03em">${c.startsWith('MU-')?'Código interno':'Código'} ${esc(c)}</p>
-  <h1 class="md">${esc(p.nombre)}</h1>
-  <p class="sub">${esc([p.cliente,p.marca,p.proyecto].filter(Boolean).join(' › ')||'Sin cliente ni proyecto')}</p>
-  <div class="dark"><div class="between"><b style="font-size:17px">Dónde está</b><span style="font-size:13px;color:#c9c7c7"><b style="color:#fff;font-size:15px">${tot}</b> ${tot===1?'unidad':'unidades'}</span></div>
+  return `${cabecera(iconBtn(`data-go="ingreso" data-codigo="${esc(c)}" data-editar="1"`,'edit','Editar producto'))}
+  ${p.foto?`<div class="photo"><img src="${fotoUrl(p.foto)}" alt="Foto de ${esc(p.nombre)}"></div>`:''}
+  <h1 class="md" style="margin-top:${p.foto?'18px':'4px'}">${esc(p.nombre)}</h1>
+  ${meta?`<div class="meta">${meta}</div>`:''}
+  <div class="dark"><div class="between"><b style="font-size:17px">Dónde está</b><span style="font-size:13px;color:#c9c7c7">${unidades(tot)}</span></div>
   ${st.length?`<div class="list">${st.map((s,i)=>`<button class="item" data-go="caja" data-id="${esc(s.caja)}"><span style="position:relative;flex:none;width:36px;height:36px">${shape(i===0?GALLETA:SOL,36,'#a35e47')}<svg class="ico" width="16" height="16" viewBox="0 0 24 24" style="position:absolute;left:10px;top:10px;stroke:#fff;stroke-width:2.4"><path d="${I.box}"/></svg></span><span class="tx"><b>${esc(cajaNom(s.caja))}</b><span>${esc(S.cajas.get(s.caja)?.lugar||'')}</span></span><b style="font-size:20px;font-weight:900;font-stretch:125%">${s.cant}</b></button>`).join('')}</div>`
    :`<p style="margin:10px 0 0;color:#c9c7c7">Ya no hay: se devolvió o se usó.</p>`}</div>
-  ${puedeEscribir?`<div class="btns">${st.length?`<button class="btn pri" data-go="mover" data-codigo="${esc(c)}">Mover o sacar</button>`:''}<button class="btn" data-go="agregar" data-codigo="${esc(c)}">${ico('plus',20)}Sumar</button></div>`:''}
-  <div class="card" style="gap:0"><div class="between"><b style="font-size:17px">Medidas del producto</b>${puedeEscribir?`<button class="link acc" style="padding:4px 0" data-go="ingreso" data-codigo="${esc(c)}" data-editar="1">Editar</button>`:''}</div>
-  ${med.length?`<dl class="kv">${med.map(m=>`<div><dt>${m[0]}</dt><dd>${esc(m[1])} ${m[2]}</dd></div>`).join('')}</dl>`:`<p class="help" style="margin:8px 0 0">Sin medidas cargadas. Sirven para diseñar el exhibidor sin volver a medir.</p>`}</div>
-  ${c.startsWith('MU-')?`<button class="btn big" data-go="etiqueta" data-codigo="${esc(c)}">${ico('tag',20)}Etiqueta del producto</button>`:''}
-  <h2>Historial</h2>
-  ${hist?(hist.length?`<ol class="feed">${hist.map(textoMov).join('')}</ol>`:`<p class="help">Sin movimientos.</p>`):`<p class="help">Cargando…</p>`}`;
+  <div class="btns">${st.length?`<button class="btn pri" data-go="mover" data-codigo="${esc(c)}">${ico('arrow',18)}Mover o sacar</button>`:''}<button class="btn" data-go="agregar" data-codigo="${esc(c)}">${ico('plus',18)}Sumar</button></div>
+  ${dims.length||p.peso?`<div class="medidas"><span>Medidas</span><b>${dims.length?esc(dims.join(' × '))+' mm':''}${dims.length&&p.peso?' · ':''}${p.peso?esc(p.peso)+' g':''}</b></div>`:''}
+  <div class="sec"><h2>Historial</h2></div>
+  ${hist?(hist.length?`<ol class="feed">${hist.map(textoMov).join('')}</ol>`:`<p class="help">Sin movimientos.</p>`):`<p class="help">Cargando…</p>`}
+  <p class="foot">${c.startsWith('MU-')?'Código interno':'Código'} ${esc(c)}${c.startsWith('MU-')?` · <button class="link acc" style="padding:0;font-size:12.5px" data-go="etiqueta" data-codigo="${esc(c)}">Etiqueta</button>`:''}</p>`;
 }, enter(){ cargarHist(); }},
 
 /* ---------- Producto nuevo / editar ---------- */
 ingreso:{ html(){
   const ed=!!V.p.editar, c=V.p.codigo, f=V.f, cls=clientes();
-  if(!f._init){ const p=S.productos.get(c)||{}; Object.assign(f,{_init:1,nombre:p.nombre||'',marca:p.marca||'',cliente:p.cliente||(V.p.caja&&S.cajas.get(V.p.caja)?.nombre?.split(' - ')[0])||'',proyecto:p.proyecto||'',alto:p.alto||'',ancho:p.ancho||'',prof:p.prof||'',peso:p.peso||'',foto:p.foto||'',cant:f.cant||1,destino:V.p.caja||''}); }
-  return `${cabecera(`<span class="kicker" style="font-variant-numeric:tabular-nums">${c?esc((c.startsWith('MU-')?'Interno ':'Código ')+c):'Sin código'}</span>`)}
+  if(!f._init){ const p=S.productos.get(c)||{}; const cliCaja=V.p.caja&&S.cajas.get(V.p.caja)?.nombre?.split(' - ')[0]; Object.assign(f,{_init:1,nombre:p.nombre||'',marca:p.marca||'',cliente:p.cliente||(cliCaja?(cls.find(x=>norm(x)===norm(cliCaja))||cliCaja):''),proyecto:p.proyecto||'',alto:p.alto||'',ancho:p.ancho||'',prof:p.prof||'',peso:p.peso||'',foto:p.foto||'',cant:f.cant||1,destino:V.p.caja||''}); }
+  const enLista=cls.some(x=>norm(x)===norm(f.cliente));
+  const otro=f._otro||(f.cliente&&!enLista)||!cls.length;
+  const st=f._cat;
+  const status=!ed&&c&&!c.startsWith('MU-')?(st==='buscando'?`<p class="status"><svg class="spin" viewBox="0 0 100 100" aria-hidden="true"><path d="${SOL}" fill="#a35e47"/></svg>Buscando el código en los catálogos…</p>`
+    :st==='ok'?`<p class="status">${ico('check',14)}Completado desde ${esc(f._fuente)}. Revisalo.</p>`
+    :st==='no'?`<p class="status muted">No está en los catálogos: escribilo vos.</p>`:''):'';
+  return `${cabecera(`<span class="kicker" style="font-variant-numeric:tabular-nums">${c?esc(c):'Sin código'}</span>`)}
   <h1 class="md">${ed?'Editar producto':'Producto nuevo'}</h1>
-  <p class="sub">${ed?'Corregí lo que haga falta.':c?'Este código todavía no está cargado. Completá lo básico y guardalo en una caja.':'Le vamos a asignar un código interno para que tenga su etiqueta.'}</p>
-  ${!ed&&V.p.codigo&&!V.p.codigo.startsWith('MU-')?cardCat(f):''}
   <div class="card">
-   <div class="f"><label for="nombre">Producto</label><input class="in" id="nombre" data-f="nombre" placeholder="Ej.: Sedal Shampoo Ceramidas 340 ml" value="${esc(f.nombre)}" autocomplete="off"></div>
-   <div class="grid2"><div class="f"><label for="marca">Marca</label><input class="in" id="marca" data-f="marca" placeholder="Sedal" value="${esc(f.marca)}" autocomplete="off"></div>
-   <div class="f"><label for="proyecto">Proyecto <span class="opt">· opc.</span></label><input class="in" id="proyecto" data-f="proyecto" placeholder="BP-0021" value="${esc(f.proyecto)}" autocomplete="off"></div></div>
-   <div class="f"><span class="lbl" id="cli-l">Cliente</span>${cls.length?`<div class="chips" role="group" aria-labelledby="cli-l">${cls.map(x=>`<button type="button" class="chip" data-cli="${esc(x)}" aria-pressed="${norm(x)===norm(f.cliente)}">${esc(x)}</button>`).join('')}</div>`:''}
-   <input class="in" id="cliente" data-f="cliente" aria-labelledby="cli-l" placeholder="${cls.length?'u otro…':'Ej.: HH Global'}" value="${esc(f.cliente)}" autocomplete="off"></div>
-   ${ed?'':`<div class="between" style="align-items:center"><span class="lbl">Cantidad</span>${stepper('cant',f.cant)}</div>`}
+   <div class="f"><label for="nombre">Producto</label><input class="in" id="nombre" data-f="nombre" placeholder="Sedal Shampoo Ceramidas 340 ml" value="${esc(f.nombre)}" autocomplete="off">${status}</div>
+   <div class="grid2"><div class="f"><label for="marca">Marca</label><input class="in" id="marca" data-f="marca" value="${esc(f.marca)}" autocomplete="off"></div>
+   <div class="f"><label for="proyecto">Proyecto <span class="opt">(opcional)</span></label><input class="in" id="proyecto" data-f="proyecto" placeholder="BP-0021" value="${esc(f.proyecto)}" autocomplete="off"></div></div>
+   <div class="f"><span class="lbl" id="cli-l">Cliente</span>${cls.length?`<div class="chips" role="group" aria-labelledby="cli-l">${cls.map(x=>`<button type="button" class="chip" data-cli="${esc(x)}" aria-pressed="${!otro&&norm(x)===norm(f.cliente)}">${esc(x)}</button>`).join('')}<button type="button" class="chip" data-cli="__otro" aria-pressed="${!!otro}">Otro</button></div>`:''}
+   ${otro?`<input class="in" id="cliente" data-f="cliente" aria-labelledby="cli-l" placeholder="Nombre del cliente" value="${esc(enLista?'':f.cliente)}" autocomplete="off">`:''}</div>
   </div>
-  ${ed?'':`<div class="dark"><span class="lbl">Dónde la guardás</span><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${selectorCaja('destino',f.destino,{oscuro:true})}</div></div>`}
-  <div class="card"><span class="lbl">Foto y medidas <span class="opt">· opcional</span></span>
+  ${ed?'':`<div class="d-card">${selectorCaja('destino',f.destino,{label:'Dónde lo guardás'})}<div class="between" style="align-items:center"><span class="lbl">Cantidad</span>${stepper('cant',f.cant)}</div></div>`}
+  <div class="card"><span class="lbl">Foto y medidas <span class="opt">(opcional)</span></span>
    <div id="fotoZona" style="display:flex;flex-direction:column;gap:10px">${fotoHTML(f)}</div>
-   <div class="grid3">${[['alto','Alto'],['ancho','Ancho'],['prof','Prof.']].map(([k,l])=>`<div class="f"><label for="${k}" style="font-size:12.5px;color:#464646">${l} (mm)</label><input class="in" id="${k}" data-f="${k}" inputmode="decimal" value="${esc(f[k])}"></div>`).join('')}</div>
-   <div class="f" style="max-width:50%"><label for="peso" style="font-size:12.5px;color:#464646">Peso (g)</label><input class="in" id="peso" data-f="peso" inputmode="decimal" value="${esc(f.peso)}"></div>
+   <div class="grid2">${[['alto','Alto (mm)'],['ancho','Ancho (mm)'],['prof','Profundidad (mm)'],['peso','Peso (g)']].map(([k,l])=>`<div class="f"><label for="${k}" style="font-size:12.5px;font-weight:700;color:#464646">${l}</label><input class="in" id="${k}" data-f="${k}" inputmode="decimal" value="${esc(f[k])}"></div>`).join('')}</div>
   </div>
-  <button class="btn pri big" data-act="guardarIngreso">${ed?'Guardar cambios':'Guardar'+(f.destino?` ${esc(f.cant)} en ${esc(cajaNom(f.destino))}`:'')}</button>`;
+  <button class="btn pri save" data-act="guardarIngreso">${ed?'Guardar cambios':'Guardar'+(f.destino?` ${esc(f.cant)} en ${esc(cajaNom(f.destino))}`:'')}</button>`;
 }, enter(){ if(!V.p.editar&&V.p.codigo&&!V.p.codigo.startsWith('MU-')) completarDesdeCatalogo(); }},
 
 /* ---------- Sumar unidades de un producto ya cargado ---------- */
 agregar:{ html(){
   const c=V.p.codigo, f=V.f; if(!f._init){ f._init=1; f.cant=1; f.destino=V.p.caja||stockDe(c)[0]?.caja||''; }
-  return `${cabecera()}<p class="kicker">Ya está cargado · ${totalDe(c)} en total</p><h1 class="md">${esc(prodNom(c))}</h1>
-  <div class="card"><div class="between" style="align-items:center"><span class="lbl">¿Cuántas guardás?</span>${stepper('cant',f.cant)}</div></div>
-  <div class="dark"><span class="lbl">En qué caja</span><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${selectorCaja('destino',f.destino,{oscuro:true})}</div></div>
-  <button class="btn pri big" data-act="guardarAgregar">Guardar ${esc(f.cant)}${f.destino?' en '+esc(cajaNom(f.destino)):''}</button>
-  <button class="link" data-go="producto" data-codigo="${esc(c)}" style="display:block;margin:6px auto 0">Ver el producto</button>`;
+  const tot=totalDe(c);
+  return `${cabecera()}<p class="kicker">Ya está cargado${tot?` · hay ${tot}`:''}</p><h1 class="md">${esc(prodNom(c))}</h1>
+  <div class="d-card">${selectorCaja('destino',f.destino,{label:'Dónde lo guardás'})}<div class="between" style="align-items:center"><span class="lbl">Cantidad</span>${stepper('cant',f.cant)}</div></div>
+  <button class="btn pri save" data-act="guardarAgregar">Guardar ${esc(f.cant)}${f.destino?' en '+esc(cajaNom(f.destino)):''}</button>`;
 }},
 
 /* ---------- Mover / devolver / descartar ---------- */
@@ -512,35 +566,36 @@ mover:{ html(){
   const max=st.find(s=>s.caja===f.desde)?.cant||0;
   const A=[['mover','Mover a otra caja','arrow'],['devolver','Devolver al cliente','undo'],['descartar','Descartar o usada','trash']];
   const verbo={mover:'Mover',devolver:'Devolver',descartar:'Descartar'}[f.accion];
-  return `${cabecera()}<p class="kicker">${esc(prodNom(c))}</p><h1 class="md">¿Qué hacés?</h1>
-  <div class="acts" role="radiogroup" aria-label="Qué hacés" style="margin-top:16px">${A.map(([k,l,ic])=>`<button type="button" class="act" role="radio" aria-checked="${f.accion===k}" data-accion="${k}">${ico(ic,22)}${l}</button>`).join('')}</div>
+  return `${cabecera()}<p class="kicker">${esc(prodNom(c))}</p><h1 class="md">Mover o sacar</h1>
+  <div class="acts" role="radiogroup" aria-label="Qué hacés" style="margin-top:16px;grid-template-columns:repeat(3,minmax(0,1fr))">${A.map(([k,l,ic])=>`<button type="button" class="act" role="radio" aria-checked="${f.accion===k}" data-accion="${k}" style="font-size:14px">${ico(ic,22)}${l}</button>`).join('')}</div>
   <div class="card">
-   <div class="f"><label for="desde">Desde</label><select class="in" id="desde" data-f="desde">${st.map(s=>`<option value="${esc(s.caja)}" ${s.caja===f.desde?'selected':''}>${esc(cajaNom(s.caja))} · hay ${s.cant}</option>`).join('')}</select></div>
-   <div class="between" style="align-items:center"><span class="lbl">Cuántas <span class="opt">· máx. ${max}</span></span>${stepper('cant',f.cant,max)}</div>
+   ${st.length>1?`<div class="f"><label for="desde">Desde</label><select class="in" id="desde" data-f="desde">${st.map(s=>`<option value="${esc(s.caja)}" ${s.caja===f.desde?'selected':''}>${esc(cajaNom(s.caja))} (hay ${s.cant})</option>`).join('')}</select></div>`
+     :`<div class="between" style="align-items:center"><span class="lbl">Desde</span><span style="font-weight:700">${esc(cajaNom(f.desde))} <span style="color:#464646;font-weight:600">(hay ${max})</span></span></div>`}
+   <div class="between" style="align-items:center"><span class="lbl">Cuántas</span>${stepper('cant',f.cant,max)}</div>
+   ${f.accion==='mover'?'':`<div class="f"><label for="nota">Nota <span class="opt">(opcional)</span></label><input class="in" id="nota" data-f="nota" placeholder="La retiró el vendedor" value="${esc(f.nota)}"></div>`}
   </div>
-  ${f.accion==='mover'?`<div class="dark"><span class="lbl">A qué caja</span><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${selectorCaja('destino',f.destino,{excepto:f.desde,oscuro:true})}</div></div>`
-   :`<div class="card"><div class="f"><label for="nota">Nota <span class="opt">· opcional</span></label><input class="in" id="nota" data-f="nota" placeholder="Ej.: la retiró el vendedor" value="${esc(f.nota)}"></div></div>`}
-  <button class="btn pri big" data-act="guardarMover">${verbo} ${esc(f.cant)} ${Number(f.cant)===1?'unidad':'unidades'}</button>`;
+  ${f.accion==='mover'?`<div class="d-card">${selectorCaja('destino',f.destino,{excepto:f.desde,label:'A qué caja'})}</div>`:''}
+  <button class="btn pri save" data-act="guardarMover">${verbo} ${unidades(Number(f.cant)||1)}</button>`;
 }},
 
 /* ---------- Nueva caja / editar ---------- */
 nuevaCaja:{ html(){
   const ed=V.p.id&&S.cajas.get(V.p.id), f=V.f, ls=lugares();
   if(!f._init){ f._init=1; f.nombre=ed?.nombre||''; f.lugar=ed?.lugar||''; }
-  return `${cabecera()}<h1 class="md">${ed?'Editar caja':'Nueva caja'}</h1><p class="sub">El nombre va grande en la etiqueta. Usá “CLIENTE - E1”, “CLIENTE - E2”…</p>
-  <div class="card"><div class="f"><label for="nombre">Nombre</label><input class="in" id="nombre" data-f="nombre" placeholder="HH GLOBAL - E5" value="${esc(f.nombre)}" autocomplete="off" style="text-transform:uppercase;font-weight:800"></div>
+  return `${cabecera()}<h1 class="md">${ed?'Editar caja':'Nueva caja'}</h1>
+  <div class="card"><div class="f"><label for="nombre">Nombre</label><input class="in" id="nombre" data-f="nombre" placeholder="HH GLOBAL - E5" value="${esc(f.nombre)}" autocomplete="off" style="text-transform:uppercase;font-weight:800"><p class="help" style="margin:0">Cliente y número de estante. Va grande en la etiqueta.</p></div>
   <div class="f"><label for="lugar">Dónde está</label><input class="in" id="lugar" data-f="lugar" list="lugares" placeholder="Estudio · Estante 3" value="${esc(f.lugar)}" autocomplete="off"><datalist id="lugares">${ls.map(l=>`<option value="${esc(l)}">`).join('')}</datalist></div></div>
-  <button class="btn pri big" data-act="guardarCaja">${ed?'Guardar cambios':'Crear y ver la etiqueta'}</button>`;
+  <button class="btn pri save" data-act="guardarCaja">${ed?'Guardar cambios':'Crear y ver la etiqueta'}</button>`;
 }},
 
 /* ---------- Etiqueta ---------- */
 etiqueta:{ html(){
   const caja=V.p.id&&S.cajas.get(V.p.id);
-  const t=caja?{titulo:caja.nombre,sub:caja.lugar||''}:{titulo:prodNom(V.p.codigo),sub:V.p.codigo};
-  return `${cabecera()}<h1 class="md">Etiqueta</h1><p class="sub">${caja?'Imprimila y pegala en la caja o el estante. Al escanearla se ve lo que hay adentro.':'Para un producto sin código de barras.'}</p>
-  <div class="label-prev"><img id="lbl" alt="Etiqueta de ${esc(t.titulo)}"></div>
-  <button class="btn pri big" data-act="bajarEtiqueta">Descargar imagen para imprimir</button>
-  <p class="help" id="lblHelp">Tamaño sugerido: 10 × 6,5 cm. Si no se descarga, mantené apretada la imagen para guardarla.</p>`;
+  const t=caja?caja.nombre:prodNom(V.p.codigo);
+  return `${cabecera()}<h1 class="md">Etiqueta</h1>
+  <div class="label-prev"><img id="lbl" alt="Etiqueta de ${esc(t)}"></div>
+  <button class="btn pri save" data-act="bajarEtiqueta">Descargar para imprimir</button>
+  <p class="help" id="lblHelp">${caja?'Pegala en la caja o el estante.':'Pegala en el producto.'} Tamaño sugerido: 10 × 6,5 cm.</p>`;
 }, enter(){ dibujarEtiqueta(); if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ if(V.view==='etiqueta') dibujarEtiqueta(); }); }},
 };
 
@@ -549,8 +604,7 @@ function textoMov(m){
   const txt={ingreso:`<b>Ingresó</b> ${n} a ${esc(cajaNom(m.hacia))}`,agregar:`<b>Sumó</b> ${n} a ${esc(cajaNom(m.hacia))}`,
     mover:`<b>Movió</b> ${n} de ${esc(cajaNom(m.desde))} a ${esc(cajaNom(m.hacia))}`,devolver:`<b>Devolvió</b> ${n} al cliente`,descartar:`<b>Descartó</b> ${n}`}[m.tipo]||esc(m.tipo);
   const col={ingreso:'#a35e47',agregar:'#a35e47',mover:'#000',devolver:'#9c9a9a',descartar:'#9c9a9a'}[m.tipo]||'#000';
-  const quien=m.por||'';
-  return `<li><span class="dot" style="background:${col}"></span><span><span style="font-size:14px">${txt}</span>${m.nota?`<span class="m" style="display:block">“${esc(m.nota)}”</span>`:''}<span class="m" style="display:block">${quien?esc(quien)+' · ':''}${esc(cuando(m.at))}</span></span></li>`;
+  return `<li><span class="dot" style="background:${col}"></span><span><span style="font-size:14px">${txt}</span>${m.nota?`<span class="m" style="display:block">“${esc(m.nota)}”</span>`:''}<span class="m" style="display:block">${m.por?esc(m.por)+', ':''}${esc(cuando(m.at))}</span></span></li>`;
 }
 
 /* ============ Catálogo (Precios Claros + Open Food Facts) ============ */
@@ -582,18 +636,9 @@ async function completarDesdeCatalogo(){
   else V.f._cat='no';
   const y=window.scrollY; render(); window.scrollTo(0,y);
 }
-function cardCat(f){
-  const st=f._cat;
-  const msg= st==='buscando'?`<b style="font-size:15px">Buscando el código…</b><span class="help" style="margin:2px 0 0">En el catálogo de Precios Claros y en Open Food Facts.</span>`
-   : st==='ok'?`<b style="font-size:15px">Lo encontré en ${esc(f._fuente)}</b><span class="help" style="margin:2px 0 0">Revisá el nombre y la marca. El cliente lo elegís vos.</span>`
-   : `<b style="font-size:15px">No está en los catálogos</b><span class="help" style="margin:2px 0 0">Completalo a mano. La próxima vez que alguien lo escanee, ya va a estar.</span>`;
-  return `<div class="card" style="background:#f6ece8;gap:12px"><div class="row" style="align-items:flex-start"><span style="position:relative;flex:none;width:44px;height:44px">${shape(st==='buscando'?SOL:GALLETA,44,'#a35e47')}<svg class="ico" width="20" height="20" viewBox="0 0 24 24" style="position:absolute;left:12px;top:12px;stroke:#fff"><path d="${st==='ok'?I.check:I.search}"/></svg></span><span style="display:flex;flex-direction:column">${msg}</span></div></div>`;
-}
-
 /* ============ Búsqueda ============ */
 function resultados(){
-  const q=V.f.q||''; const ws=norm(q).split(/\s+/).filter(Boolean);
-  if(!ws.length) return `<p class="help" style="margin-top:6px">Escribí la marca, el producto, el cliente o la caja. Ej.: “shampoo sedal”.</p>`;
+  const q=V.f.q||''; const ws=norm(q).split(/\s+/).filter(Boolean); if(!ws.length) return cuerpoInicio();
   const coincide=(p,cod)=>{ const t=norm([p.marca,p.nombre,p.cliente,p.proyecto,cod].join(' ')); return ws.every(w=>t.includes(w)); };
   const prods=[...S.productos.entries()].filter(([cod,p])=>coincide(p,cod)).map(([cod])=>cod);
   const cajas=cajasOrden().filter(c=>ws.every(w=>norm(c.nombre+' '+(c.lugar||'')).includes(w)));
@@ -601,25 +646,23 @@ function resultados(){
   const sinStock=prods.filter(c=>!conStock.has(c));
   let h='';
   if(filas.length){
-    const porCaja={}; filas.forEach(s=>{ porCaja[s.caja]=(porCaja[s.caja]||0)+s.cant; });
-    const ds=Object.entries(porCaja).sort((a,b)=>b[1]-a[1]); const tot=filas.reduce((a,s)=>a+s.cant,0);
-    const ls=[...new Set(ds.map(([c])=>S.cajas.get(c)?.lugar).filter(Boolean))];
-    const lugar0=ds.length===1?(S.cajas.get(ds[0][0])?.lugar||'').split('·')[0].trim():''; const cc=ds.length===1?cajaCorta(ds[0][0]):'';
-    const en=ds.length===1?`Está ${lugar0?'en '+esc(lugar0)+', ':''}${cc.startsWith('Caja ')?'en la caja '+esc(cc.slice(5)):'en '+esc(cc)}.`:`Está repartido en ${ds.length} cajas.`;
-    h+=`<div class="dark" style="margin-top:4px"><div class="yes"><span style="position:relative;flex:none;width:52px;height:52px">${shape(SOL,52,'#a35e47')}<svg class="ico" width="24" height="24" viewBox="0 0 24 24" style="position:absolute;left:14px;top:14px;stroke:#fff;stroke-width:2.6"><path d="${I.check}"/></svg></span><b>Sí, hay.</b></div>
-    <p style="margin:14px 0 0;font-size:17px">${plural(conStock.size,'producto','productos')}, ${plural(tot,'unidad','unidades')}. ${en}</p>
-    <div class="list">${ds.map(([c,u])=>`<button class="item" data-go="caja" data-id="${esc(c)}"><span class="ic" style="background:transparent">${ico('box',24,'stroke:#c27b63')}</span><span class="tx"><span>${esc(S.cajas.get(c)?.lugar||'')}</span><b style="font-size:17px">${esc(cajaNom(c))}</b></span><span class="n"><b style="font-size:20px;font-weight:900;font-stretch:125%">${u}</b><span>unid.</span></span></button>`).join('')}</div></div>
-    <h2>Lo que encontré</h2><div class="list">${filas.sort((a,b)=>prodNom(a.codigo).localeCompare(prodNom(b.codigo),'es')).map(s=>filaProd(s,{mostrarCaja:true})).join('')}</div>`;
+    const porCaja={}; filas.forEach(s=>{ (porCaja[s.caja]=porCaja[s.caja]||[]).push(s); });
+    const ds=Object.entries(porCaja).sort((a,b)=>b[1].reduce((x,s)=>x+s.cant,0)-a[1].reduce((x,s)=>x+s.cant,0));
+    const tot=filas.reduce((a,s)=>a+s.cant,0);
+    let donde;
+    if(ds.length===1){ const c=S.cajas.get(ds[0][0])||{}; const lugar=(c.lugar||'').split('·')[0].trim(); donde=`Está${lugar?' en '+esc(lugar)+',':''} en <b>${esc(cajaNom(ds[0][0]))}</b>.`; }
+    else donde=`Está en ${ds.length} cajas.`;
+    h+=`<div class="dark" style="margin-top:14px"><div class="yes"><span style="position:relative;flex:none;width:52px;height:52px">${shape(SOL,52,'#a35e47')}<svg class="ico" width="24" height="24" viewBox="0 0 24 24" style="position:absolute;left:14px;top:14px;stroke:#fff;stroke-width:2.6"><path d="${I.check}"/></svg></span><b>Sí, hay.</b></div>
+    <p style="margin:12px 0 0;font-size:16px;line-height:1.4">${unidades(tot)} de ${conStock.size===1?'1 producto':conStock.size+' productos'}. ${donde}</p></div>
+    ${ds.map(([id,arr])=>grupoCaja(id,arr.sort((a,b)=>prodNom(a.codigo).localeCompare(prodNom(b.codigo),'es')))).join('')}`;
     const marcas=[...new Set([...conStock].map(c=>S.productos.get(c)?.marca).filter(Boolean))];
     if(marcas.length===1){ const otros=[...S.productos.keys()].filter(c=>!prods.includes(c)&&norm(S.productos.get(c).marca)===norm(marcas[0])).flatMap(stockDe);
-      if(otros.length) h+=`<h2>Otros de ${esc(marcas[0])}</h2><div class="list">${otros.map(s=>filaProd(s,{mostrarCaja:true,blanco:true})).join('')}</div>`; }
+      if(otros.length) h+=`<div class="sec"><h2>Otros de ${esc(marcas[0])}</h2></div><div class="grp">${otros.map(s=>filaProd(s,esc(cajaNom(s.caja)))).join('')}</div>`; }
   } else if(!cajas.length){
-    h+=`<div class="empty" style="margin-top:4px"><b style="font-size:40px;line-height:1">No hay.</b><p>${sinStock.length?'Lo tuvimos, pero ya se devolvió o se usó.':`No encontré muestras de “${esc(q)}”. Probá con la marca sola o escaneá el código.`}</p>
-    ${scanLabel({tipo:'abrir'},'btn pri big',ico('scan',20)+'Escanear el código')}</div>`;
+    h+=`<div class="empty" style="margin-top:14px"><b style="font-size:40px;line-height:1">No hay.</b><p>${sinStock.length?'Lo tuvimos, pero ya se devolvió o se usó.':'No encontré muestras con esas palabras. Probá con la marca sola.'}</p></div>`;
   }
-  if(sinStock.length&&filas.length) h+=`<h2>Ya no hay</h2><div class="list">${sinStock.map(c=>`<button class="item white" style="border:2px solid #f2f2f2" data-go="producto" data-codigo="${esc(c)}"><span class="tx"><b>${esc(prodNom(c))}</b><span>devuelto o usado</span></span></button>`).join('')}</div>`;
-  if(sinStock.length&&!filas.length) h+=`<div class="list">${sinStock.map(c=>`<button class="item" data-go="producto" data-codigo="${esc(c)}"><span class="tx"><b>${esc(prodNom(c))}</b><span>Ver historial</span></span></button>`).join('')}</div>`;
-  if(cajas.length) h+=`<h2>Cajas</h2><div class="list">${cajas.map(c=>`<button class="item" data-go="caja" data-id="${esc(c.id)}"><span class="ic">${ico('box',22,'stroke:#000;stroke-width:2')}</span><span class="tx"><b>${esc(c.nombre)}</b><span>${esc(c.lugar||'')}</span></span></button>`).join('')}</div>`;
+  if(sinStock.length) h+=`<div class="sec"><h2>Ya no hay</h2></div><div class="grp">${sinStock.map(c=>`<button class="row-p" data-go="producto" data-codigo="${esc(c)}"><span class="ph">${fotoMini(S.productos.get(c))}</span><span class="tx"><b>${esc(prodNom(c))}</b><span>Devuelto o usado</span></span></button>`).join('')}</div>`;
+  if(cajas.length) h+=`<div class="sec"><h2>Cajas</h2></div><div class="list">${cajas.map(c=>`<button class="item" data-go="caja" data-id="${esc(c.id)}"><span class="ic">${ico('box',22,'stroke:#000;stroke-width:2')}</span><span class="tx"><b>${esc(c.nombre)}</b><span>${esc(c.lugar||'')}</span></span></button>`).join('')}</div>`;
   return h;
 }
 
@@ -668,6 +711,7 @@ const ACCIONES={
   escribirEn(){ scanIntent={tipo:'guardarEn',caja:V.p.id}; go('escanear',{}); },
   foto(){ $('#fotoIn').click(); calentarRecortador(); },
   aMano(){ go('escanear',{}); },
+  limpiarQ(){ V.f.q=''; render(); $('#q')?.focus(); },
   async fotoAlterna(){ const vista=V, f=vista.f; const usarCut=!f._sinFondo;
     try{
       if(usarCut&&!f._cut){ f._bg='Sacando el fondo…'; pintarFoto(vista); const png=await sacarFondo(f._orig); f._cut=await encuadrar(png,{transparente:true}); if(!f._cut) throw new Error('vacío'); }
@@ -713,9 +757,7 @@ function render(){
   if(conexion==='sin') banner=`<p class="banner err">No me pude conectar con la planilla. Revisá la conexión; reintento solo.</p>`;
   else if(conexion==='cargando'&&!S.cajas.size) banner=`<p class="banner">Cargando las muestras…</p>`;
   $('#app').innerHTML=banner+v.html();
-  const nav=$('#nav'); const enInicio=V.view==='inicio';
-  nav.innerHTML=`<button class="${enInicio?'on':''}" data-act="home">${ico('home',20)}Inicio</button>${scanLabel({tipo:'abrir'},'sc',ico('scan',20)+'Escanear')}<button class="${V.view==='buscar'?'on':''}" data-go="buscar">${ico('search',20)}Buscar</button>`;
-  nav.hidden=['ingreso','agregar','mover','nuevaCaja','camara'].includes(V.view);
+  $('#nav').hidden=true;
 }
 document.addEventListener('click',e=>{
   const sc=e.target.closest('[data-scan]'); if(sc){ e.preventDefault(); try{ scanIntent=JSON.parse(sc.dataset.scan); }catch(_){ scanIntent={tipo:'abrir'}; } go('camara',{}); return; }
@@ -723,8 +765,8 @@ document.addEventListener('click',e=>{
   const g=e.target.closest('[data-go]'); if(g){ e.preventDefault(); const d=g.dataset; go(d.go,{id:d.id,codigo:d.codigo,editar:d.editar}); return; }
   const a=e.target.closest('[data-act]'); if(a){ e.preventDefault(); const k=a.dataset.act; if(k==='home') home(); else ACCIONES[k]&&ACCIONES[k](); return; }
   const st=e.target.closest('[data-step]'); if(st){ const inp=$('#'+st.dataset.step); const max=Number(inp.dataset.max)||Infinity; let n=(parseInt(inp.value,10)||0)+Number(st.dataset.d); n=Math.max(1,Math.min(max,n)); inp.value=n; V.f[st.dataset.step]=n; refrescarBoton(); return; }
-  const cl=e.target.closest('[data-cli]'); if(cl){ V.f.cliente=cl.dataset.cli; render(); return; }
-  const ac=e.target.closest('[data-accion]'); if(ac){ V.f.accion=ac.dataset.accion; render(); return; }
+  const cl=e.target.closest('[data-cli]'); if(cl){ const y=window.scrollY; if(cl.dataset.cli==='__otro'){ V.f._otro=true; V.f.cliente=''; render(); window.scrollTo(0,y); $('#cliente')?.focus(); } else { V.f._otro=false; V.f.cliente=cl.dataset.cli; render(); window.scrollTo(0,y); } return; }
+  const ac=e.target.closest('[data-accion]'); if(ac){ const y=window.scrollY; V.f.accion=ac.dataset.accion; render(); window.scrollTo(0,y); return; }
 });
 document.addEventListener('input',e=>{
   const t=e.target; if(t.id==='cant'){ V.f.cant=t.value; return; }
@@ -733,7 +775,7 @@ document.addEventListener('input',e=>{
 });
 document.addEventListener('change',e=>{
   const t=e.target; if(t.id==='cant'){ const max=Number(t.dataset.max)||Infinity; V.f.cant=Math.max(1,Math.min(max,parseInt(t.value,10)||1)); refrescarBoton(); return; }
-  const k=t.dataset&&t.dataset.f; if(t.tagName==='SELECT'&&k){ V.f[k]=t.value; if(k==='desde') V.f.cant=1; render(); }
+  const k=t.dataset&&t.dataset.f; if(t.tagName==='SELECT'&&k){ const y=window.scrollY; V.f[k]=t.value; if(k==='desde') V.f.cant=1; render(); window.scrollTo(0,y); }
 });
 document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.id==='manual'){ e.preventDefault(); ACCIONES.manual(); return; }
   if(e.key==='Enter'&&e.target.id==='minombre'){ e.preventDefault(); ACCIONES.guardarNombre(); return; }
