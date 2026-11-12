@@ -268,7 +268,7 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-const APP_VERSION='202611121148';
+const APP_VERSION='202611121246';
 async function chequearVersion(){ try{ if(location.protocol==='file:') return; const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'}); const nueva=(await r.text()).trim();
   if(nueva&&nueva!==APP_VERSION){ const u=new URL(location.href); if(u.searchParams.get('v')===nueva) return; u.searchParams.set('v',nueva); location.replace(u.toString()); } }catch(e){} }
 chequearVersion();
@@ -411,7 +411,7 @@ async function iniciarCamara(){
         }
       }
     }catch(e){}
-    if(txt&&camViva){ if(navigator.vibrate) try{ navigator.vibrate(80); }catch(e){} detenerCamara(); manejarCodigo(txt); return; }
+    if(txt&&camViva){ pip(); detenerCamara(); manejarCodigo(txt); return; }
     camTimer=setTimeout(paso,camDet?150:220);
   };
   paso();
@@ -476,7 +476,7 @@ async function alElegirFoto(e){
   let txt=null; try{ txt=await leerCodigo(file); }catch(err){ txt=null; }
   overlay(null);
   if(!txt){ go('escanear',{fallo:true}); return; }
-  manejarCodigo(txt);
+  pip(); manejarCodigo(txt);
 }
 function manejarCodigo(raw){
   const t=String(raw||'').trim(); if(!t) return;
@@ -803,6 +803,30 @@ async function completarDesdeCatalogo(){
   else V.f._cat='no';
   const y=window.scrollY; render(); window.scrollTo(0,y);
 }
+
+/* ============ Pip de lector y vibración al escanear ============ */
+let audioCtx=null;
+function prepararAudio(){ try{ if(!audioCtx){ const AC=window.AudioContext||window.webkitAudioContext; if(!AC) return; audioCtx=new AC(); }
+  if(audioCtx.state==='suspended') audioCtx.resume(); }catch(e){} }
+// iOS solo deja sonar el audio después de un toque: lo "despertamos" con el primero.
+['pointerdown','touchend','click'].forEach(ev=>document.addEventListener(ev,prepararAudio,{passive:true,capture:true}));
+function tono(f,t0,dur,vol){ const o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='square'; o.frequency.value=f;
+  g.gain.setValueAtTime(0.0001,t0); g.gain.exponentialRampToValueAtTime(vol,t0+0.005); g.gain.setValueAtTime(vol,t0+dur-0.015); g.gain.exponentialRampToValueAtTime(0.0001,t0+dur);
+  o.connect(g).connect(audioCtx.destination); o.start(t0); o.stop(t0+dur+0.02); }
+let hapticSw=null;
+function vibrar(patron){
+  if(navigator.vibrate){ try{ if(navigator.vibrate(patron)) return; }catch(e){} }
+  // iPhone (iOS 18+): Safari no tiene vibrate, pero un interruptor nativo da un toque háptico.
+  try{ if(!hapticSw){ const l=document.createElement('label'); l.setAttribute('aria-hidden','true'); l.style.cssText='position:fixed;left:-9999px;width:1px;height:1px;overflow:hidden';
+      const i=document.createElement('input'); i.type='checkbox'; i.setAttribute('switch',''); i.tabIndex=-1; l.appendChild(i); document.body.appendChild(l); hapticSw=l; }
+    const n=Array.isArray(patron)?Math.ceil(patron.length/2):1; for(let k=0;k<n;k++) setTimeout(()=>hapticSw.click(),k*120); }catch(e){}
+}
+function pip(mal){
+  try{ prepararAudio(); if(audioCtx&&audioCtx.state==='running'){ const t=audioCtx.currentTime+0.01;
+    if(mal){ tono(440,t,0.12,0.12); tono(330,t+0.16,0.18,0.12); } else tono(2800,t,0.09,0.09); } }catch(e){}
+  vibrar(mal?[60,60,60]:50);
+}
+
 /* ============ Movimiento con varios productos ============ */
 function sumarDias(n){ const d=new Date(); d.setDate(d.getDate()+n); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
 function cajaPorDefecto(codigo){ const f=V.f; const st=stockDe(codigo); if(f.desdeDef&&st.some(s=>s.caja===f.desdeDef)) return f.desdeDef; return st.sort((a,b)=>b.cant-a.cant)[0]?.caja||''; }
@@ -817,7 +841,7 @@ function agregarLinea(codigo,silencio){
 }
 let avisoT=null;
 function avisoCam(t,mal){ const el=$('#camOk'); if(!el) { toast(t); return; } el.innerHTML=`${ico(mal?'x':'check',16,`stroke:${mal?'#b3261e':'#a35e47'};stroke-width:3`)}<span>${esc(t)}</span>`; el.style.opacity=1; clearTimeout(avisoT); avisoT=setTimeout(()=>{ el.style.opacity=0; },1800);
-  if(navigator.vibrate) try{ navigator.vibrate(mal?[60,60,60]:60); }catch(e){} }
+  pip(mal); }
 function movCampos(){
   const f=V.f, cs=cajasOrden();
   const sel=(id,val,label,excepto)=>`<div class="f"><label for="${id}" class="lbl">${label}</label><select class="in" id="${id}" data-f="${id.replace('mv_','')}"><option value="">Elegí la caja…</option>${cs.filter(c=>c.id!==excepto).map(c=>`<option value="${esc(c.id)}" ${c.id===val?'selected':''}>${esc(c.nombre)}</option>`).join('')}</select></div>`;
