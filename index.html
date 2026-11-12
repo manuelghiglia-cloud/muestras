@@ -232,6 +232,11 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 .cam .ok{position:absolute;left:12px;right:12px;top:12px;background:var(--paper);color:var(--ink);border-radius:14px;padding:8px 12px;font-size:13.5px;font-weight:800;display:flex;gap:8px;align-items:center;transition:opacity .3s}
 .linea{display:flex;align-items:center;gap:10px;background:var(--paper);border-radius:18px;padding:8px 8px 8px 8px}
 .linea + .linea{margin-top:6px}
+.tienda{display:flex;gap:14px;align-items:center;background:var(--paper);border-radius:20px;padding:12px}
+.tienda img{flex:none;width:96px;height:96px;object-fit:contain;border-radius:14px;background:#fff}
+.tienda>div{display:flex;flex-direction:column;gap:2px;min-width:0}
+.tienda b{font-size:15px;font-weight:800}.tienda span{font-size:13px;color:var(--ink-2)}
+.tienda .btns2{display:flex;flex-direction:column;gap:6px;margin-top:8px}.tienda .btn{min-height:44px;padding:0 14px;font-size:14px;white-space:nowrap}
 .linea.nuevo{background:#f6ece8;box-shadow:inset 0 0 0 2px #a35e47;animation:entra .35s ease-out}
 @keyframes entra{from{transform:scale(.97);opacity:.4}to{transform:none;opacity:1}}
 @media (prefers-reduced-motion:reduce){.linea.nuevo{animation:none}}
@@ -271,7 +276,7 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-const APP_VERSION='202611121023';
+const APP_VERSION='202611121050';
 async function chequearVersion(){ try{ if(location.protocol==='file:') return; const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'}); const nueva=(await r.text()).trim();
   if(nueva&&nueva!==APP_VERSION){ const u=new URL(location.href); if(u.searchParams.get('v')===nueva) return; u.searchParams.set('v',nueva); location.replace(u.toString()); } }catch(e){} }
 chequearVersion();
@@ -700,7 +705,7 @@ ingreso:{ html(){
   const otro=f._otro||(f.cliente&&!enLista)||!cls.length;
   const st=f._cat;
   const status=!ed&&c&&!c.startsWith('MU-')?(st==='buscando'?`<p class="status"><svg class="spin" viewBox="0 0 100 100" aria-hidden="true"><path d="${SOL}" fill="#a35e47"/></svg>Buscando el código en los catálogos…</p>`
-    :st==='ok'?`<p class="status">${ico('check',14)}Completado desde ${esc(f._fuente)}. Revisalo.</p>`
+    :st==='ok'?`<p class="status">${ico('check',14)}Completado desde ${esc(f._fuente)}${f._categoria?` · ${esc(f._categoria)}`:''}. Revisalo.</p>`
     :st==='no'?`<p class="status muted">No está en los catálogos: escribilo vos.</p>`:''):'';
   return `${cabecera(`<span class="kicker" style="font-variant-numeric:tabular-nums">${c?esc(c):'Sin código'}</span>`)}
   <h1 class="md">${ed?'Editar producto':'Producto nuevo'}</h1>
@@ -778,7 +783,7 @@ function textoMov(m0){ let m=m0;
   return `<li><span class="dot" style="background:${col}"></span><span><span style="font-size:14px">${txt}</span>${m.nota?`<span class="m" style="display:block">“${esc(m.nota)}”</span>`:''}<span class="m" style="display:block">${m.por?esc(m.por)+', ':''}${esc(cuando(m.at))}</span></span></li>`;
 }
 
-/* ============ Catálogo (Precios Claros + Open Food Facts) ============ */
+/* ============ Catálogo (Precios Claros, Carrefour, Farmacity, Open Food/Beauty Facts) ============ */
 const catCache={};
 async function buscarProductoExterno(codigo){
   if(!/^\d{8,14}$/.test(codigo)) return null;
@@ -798,12 +803,19 @@ async function buscarProductoExterno(codigo){
   }
   return null;
 }
+// Carrefour y Farmacity (vía Apps Script): nombre comercial, tono, categoría y foto.
+function buscarEnTiendas(codigo){
+  if(!/^\d{8,14}$/.test(codigo)) return Promise.resolve(null);
+  return Promise.race([call('buscarEAN',codigo).catch(()=>null),new Promise(r=>setTimeout(()=>r(null),9000))]);
+}
 async function completarDesdeCatalogo(){
-  const codigo=V.p.codigo; const enIngreso=()=>V.view==='ingreso'&&V.p.codigo===codigo;
+  const codigo=V.p.codigo; const vista=V; const enIngreso=()=>V===vista&&V.view==='ingreso'&&V.p.codigo===codigo;
   V.f._cat='buscando'; render();
-  const r=await buscarProductoExterno(codigo);
+  const [t,r0]=await Promise.all([buscarEnTiendas(codigo),buscarProductoExterno(codigo)]);
+  const r=t&&t.nombre?t:r0;
   if(!enIngreso()) return;
-  if(r){ if(!V.f.nombre) V.f.nombre=r.nombre; if(!V.f.marca) V.f.marca=r.marca; V.f._cat='ok'; V.f._fuente=r.fuente; }
+  if(r){ if(!V.f.nombre) V.f.nombre=r.nombre; if(!V.f.marca) V.f.marca=r.marca; V.f._cat='ok'; V.f._fuente=r.fuente;
+    if(r.categoria) V.f._categoria=r.categoria; if(r.imagen) V.f._img=r.imagen; }
   else V.f._cat='no';
   const y=window.scrollY; render(); window.scrollTo(0,y);
 }
@@ -1047,6 +1059,11 @@ const ACCIONES={
     const d=await escribir('devolverPrestamo',[{id:V.p.id,caja:f.caja,por:miNombre}]); if(!d) return;
     toast('Devolución registrada'); back();
   },
+  async usarFotoTienda(){ const vista=V, f=vista.f; if(!f._img) return;
+    f._subiendo='Bajando la foto…'; pintarFoto(vista);
+    try{ const r=await call('fotoDeTienda',f._img,'muestra-'+(vista.p.codigo||'')+'-tienda.jpg',f.foto||''); f.foto=r.id; f._prev=f._img; f._img=null; f._blob=null; f._orig=null; if(V===vista) guardarBorrador(); }
+    catch(e){ toast('No se pudo bajar la foto. Sacá una vos.'); }
+    f._subiendo=0; pintarFoto(vista); },
   limpiarQ(){ V.f.q=''; render(); $('#q')?.focus(); },
   async fotoAlterna(){ const vista=V, f=vista.f; const usarCut=!f._sinFondo;
     try{
@@ -1168,6 +1185,7 @@ async function encuadrar(blob,{transparente}={}){
 }
 function fotoHTML(f){
   if(f._subiendo&&!f.foto) return `<button type="button" class="drop" data-act="foto">${esc(f._subiendo)}</button>`;
+  if(!f.foto&&f._img) return `<div class="tienda"><img src="${esc(f._img)}" alt="Foto de ${esc(f._fuente||'la tienda')}" referrerpolicy="no-referrer"><div><b>Foto de ${esc(f._fuente||'la tienda')}</b><span>Podés usarla o sacar la tuya.</span><div class="btns2"><button type="button" class="btn pri" data-act="usarFotoTienda">Usar esta</button><button type="button" class="btn" data-act="foto">${ico('cam',18)}Sacar la mía</button></div></div></div>`;
   if(!f.foto) return `<button type="button" class="drop" data-act="foto">${ico('cam',22)}Sacar foto</button>`;
   const estado=f._bg?`<span class="tag" style="align-self:flex-start;display:inline-flex;gap:6px;align-items:center"><svg class="spin" viewBox="0 0 100 100" aria-hidden="true" style="width:14px;height:14px;margin:0"><path d="${SOL}" fill="#a35e47"/></svg>${esc(f._bg)}</span>`:'';
   const alt=!f._bg&&f._orig?`<button type="button" class="link" style="padding:4px 0" data-act="fotoAlterna">${f._sinFondo?'Usar la foto original':'Sacarle el fondo'}</button>`:'';

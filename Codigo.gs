@@ -35,7 +35,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
-    const fns = { getData, guardarCaja, guardarProducto, ingresar, mover, transaccion, devolverPrestamo, subirFoto, historial };
+    const fns = { getData, guardarCaja, guardarProducto, ingresar, mover, transaccion, devolverPrestamo, subirFoto, historial, buscarEAN, fotoDeTienda };
     const fn = fns[body.fn];
     if (!fn) throw new Error('Función desconocida: ' + body.fn);
     return json_(fn.apply(null, body.args || []));
@@ -333,4 +333,71 @@ function devolverPrestamo(d) {
       cant: Number(p.cant) || 0, nota: 'lo tenía ' + p.a, por: texto_(d.por, 60) });
     return getData();
   });
+}
+
+
+/* ============ Búsqueda del código en tiendas online (Carrefour y Farmacity) ============
+ * Las dos tiendas tienen un catálogo público que se puede consultar por código de barras.
+ * Carrefour cubre súper y perfumería; Farmacity (con Get The Look y Simplicity) cubre
+ * farmacia, skin care, maquillaje y perfumes. Los resultados se guardan 6 horas en caché. */
+const TIENDAS_ = [
+  ['Farmacity', 'https://www.farmacity.com'],
+  ['Carrefour', 'https://www.carrefour.com.ar']
+];
+
+function buscarEAN(ean) {
+  ean = String(ean || '').replace(/\D/g, '');
+  if (!/^\d{8,14}$/.test(ean)) return null;
+  const cache = CacheService.getScriptCache(), clave = 'ean_' + ean;
+  const guardado = cache.get(clave);
+  if (guardado) { const g = JSON.parse(guardado); return g && g.nombre ? g : null; }
+  const pedidos = TIENDAS_.map(function (t) {
+    return { url: t[1] + '/api/catalog_system/pub/products/search?fq=alternateIds_Ean:' + ean,
+             muteHttpExceptions: true, headers: { Accept: 'application/json' } };
+  });
+  let respuestas = [];
+  try { respuestas = UrlFetchApp.fetchAll(pedidos); } catch (e) { return null; }
+  let res = null;
+  for (let i = 0; i < respuestas.length && !res; i++) {
+    try {
+      if (respuestas[i].getResponseCode() !== 200) continue;
+      const lista = JSON.parse(respuestas[i].getContentText());
+      if (!lista || !lista.length) continue;
+      const p = lista[0];
+      const items = p.items || [];
+      const it = items.filter(function (x) { return String(x.ean) === ean; })[0] || items[0] || {};
+      const img = it.images && it.images[0] && it.images[0].imageUrl || '';
+      const cat = String((p.categories && p.categories[0]) || '').replace(/^\/|\/$/g, '').split('/').join(' › ');
+      let nombre = String(it.nameComplete || p.productName || '').trim();
+      if (items.length > 1 && it.name && nombre.indexOf(it.name) < 0) nombre += ' ' + it.name; // tono o variante
+      res = { nombre: nombre, marca: String(p.brand || '').trim(), categoria: cat, imagen: img, fuente: TIENDAS_[i][0] };
+    } catch (e) {}
+  }
+  try { cache.put(clave, JSON.stringify(res || {}), 21600); } catch (e) {}
+  return res;
+}
+
+/** Baja la foto del producto desde la tienda y la guarda en la carpeta de fotos. */
+function fotoDeTienda(url, nombre, reemplaza) {
+  url = String(url || '');
+  if (!/^https:\/\/[a-z0-9.-]+\.(vtexassets\.com|vteximg\.com\.br)\//i.test(url)) throw new Error('Esa foto no es de una tienda conocida.');
+  const r = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
+  if (r.getResponseCode() !== 200) throw new Error('No se pudo bajar la foto.');
+  const blob = r.getBlob();
+  if (blob.getBytes().length > 4 * 1024 * 1024) throw new Error('La foto es muy pesada.');
+  blob.setName(texto_(nombre, 80) || ('muestra-' + Date.now() + '.jpg'));
+  const file = carpetaFotos_().createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  if (reemplaza && reemplaza !== file.getId()) {
+    const enUso = filas_('Productos').some(function (p) { return p.foto === reemplaza; });
+    if (!enUso) tirarFoto_(reemplaza);
+  }
+  return { id: file.getId() };
+}
+
+/** Para probar desde el editor (Ejecutar): busca un shampoo y un maquillaje y muestra el resultado.
+ *  La primera vez Google te pide permiso para que el script se conecte a sitios externos. */
+function probarBusqueda() {
+  Logger.log(JSON.stringify(buscarEAN('7501006721133')));
+  Logger.log(JSON.stringify(buscarEAN('3600531697426')));
 }
