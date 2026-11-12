@@ -209,6 +209,14 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 .d-card .step input{color:#fff}
 .d-card .step button{background:#3a3a3a;color:#fff}
 .d-card .step button.p{background:#fff;color:#000}
+.cam .guia{position:absolute;left:14%;right:14%;top:7%;bottom:7%;border:3px dashed rgb(255 255 255/.85);border-radius:20px;box-shadow:0 0 0 2000px rgb(0 0 0/.38);pointer-events:none}
+.crop{margin-top:16px;border-radius:24px;background:var(--fill);padding:24px;display:flex;justify-content:center;touch-action:none;user-select:none;-webkit-user-select:none}
+.crop .cropin{position:relative;display:inline-block;line-height:0}
+.crop .clip{position:relative;overflow:hidden;border-radius:4px}
+.crop img{display:block;max-width:100%;max-height:52vh;width:auto;height:auto;pointer-events:none}
+.crop .rect{position:absolute;border:3px solid var(--acc);border-radius:6px;box-shadow:0 0 0 2000px rgb(242 242 242/.72)}
+.crop .h{position:absolute;width:44px;height:44px;margin:-22px 0 0 -22px;display:flex;align-items:center;justify-content:center;touch-action:none}
+.crop .h::after{content:"";width:20px;height:20px;border-radius:999px;background:var(--paper);border:3px solid var(--acc)}
 .shutter{width:76px;height:76px;border-radius:999px;border:4px solid var(--ink);background:var(--paper);padding:5px;cursor:pointer;flex:none}
 .shutter span{display:block;width:100%;height:100%;border-radius:999px;background:var(--acc);transition:transform .2s var(--spring)}
 .shutter:active span{transform:scale(.88)}
@@ -381,10 +389,43 @@ async function iniciarFotoCam(){
   camViva=true; camMsg('');
   try{ const [track]=camStream.getVideoTracks(); const cap=track.getCapabilities&&track.getCapabilities(); if(cap&&cap.focusMode&&cap.focusMode.includes('continuous')) await track.applyConstraints({advanced:[{focusMode:'continuous'}]}); }catch(e){}
 }
+let cropR={x0:0,y0:0,x1:1,y1:1};
+function pintarRecorte(){ const r=cropR, el=$('#cropRect'); if(!el) return;
+  el.style.left=r.x0*100+'%'; el.style.top=r.y0*100+'%'; el.style.width=(r.x1-r.x0)*100+'%'; el.style.height=(r.y1-r.y0)*100+'%';
+  const pos={tl:[r.x0,r.y0],tr:[r.x1,r.y0],bl:[r.x0,r.y1],br:[r.x1,r.y1]};
+  document.querySelectorAll('#crop .h').forEach(h=>{ const [x,y]=pos[h.dataset.h]; h.style.left=x*100+'%'; h.style.top=y*100+'%'; }); }
+function iniciarRecorte(){
+  const ing=pila[pila.length-1]; const blob=ing&&ing.f._blob; const img=$('#cropImg'); if(!blob||!img){ back(); return; }
+  cropR={x0:0.04,y0:0.04,x1:0.96,y1:0.96}; img.src=URL.createObjectURL(blob); pintarRecorte();
+  const box=$('#crop'); let act=null;
+  box.addEventListener('pointerdown',e=>{ const h=e.target.closest('.h'); if(!h) return; act=h.dataset.h; e.preventDefault();
+    const mover=ev=>{ if(!act) return; const b=box.getBoundingClientRect(); const x=Math.min(1,Math.max(0,(ev.clientX-b.left)/b.width)), y=Math.min(1,Math.max(0,(ev.clientY-b.top)/b.height)); const m=0.08;
+    if(act[1]==='l') cropR.x0=Math.min(x,cropR.x1-m); else cropR.x1=Math.max(x,cropR.x0+m);
+    if(act[0]==='t') cropR.y0=Math.min(y,cropR.y1-m); else cropR.y1=Math.max(y,cropR.y0+m); pintarRecorte(); };
+    const fin=()=>{ act=null; window.removeEventListener('pointermove',mover); window.removeEventListener('pointerup',fin); window.removeEventListener('pointercancel',fin); };
+    window.addEventListener('pointermove',mover); window.addEventListener('pointerup',fin); window.addEventListener('pointercancel',fin); });
+}
+async function aplicarRecorte(){
+  const ing=pila[pila.length-1]; const blob=ing&&ing.f._blob; if(!blob){ back(); return; }
+  try{
+  const img=await abrirImagen(blob); const w=img.width,h=img.height, r=cropR;
+  const sx=Math.round(r.x0*w), sy=Math.round(r.y0*h), sw=Math.round((r.x1-r.x0)*w), sh=Math.round((r.y1-r.y0)*h);
+  const c=document.createElement('canvas'); c.width=sw; c.height=sh; const g=c.getContext('2d'); g.fillStyle='#f2f2f2'; g.fillRect(0,0,sw,sh); g.drawImage(img,sx,sy,sw,sh,0,0,sw,sh); soltar(img);
+  const out=await new Promise(ok=>c.toBlob(ok,'image/jpeg',.88)); c.width=c.height=0;
+  back(); const vista=V; vista.f._bg='Guardando…'; pintarFoto(vista);
+  try{ await subirFotoBlob(vista,out,vista.f._sinFondo); if(vista.f._sinFondo) vista.f._cut=out; else vista.f._orig=out; }catch(e){ toast('No se pudo guardar el recorte.'); }
+  vista.f._bg=null; pintarFoto(vista);
+  }catch(e){ console.warn(e); toast('No se pudo aplicar el recorte.'); }
+}
 async function disparar(){
   const video=$('#video'); if(!video||!camViva||!video.videoWidth){ toast('La cámara todavía no está lista.'); return; }
-  const w=video.videoWidth, h=video.videoHeight, k=Math.min(1,1600/Math.max(w,h));
-  const c=document.createElement('canvas'); c.width=Math.round(w*k); c.height=Math.round(h*k); c.getContext('2d').drawImage(video,0,0,c.width,c.height);
+  // Solo lo que está dentro del marco: así no entran cosas del costado.
+  const vw=video.videoWidth, vh=video.videoHeight, box=video.getBoundingClientRect(), gr=$('#guia').getBoundingClientRect();
+  const sc=Math.max(box.width/vw,box.height/vh), ox=(vw*sc-box.width)/2, oy=(vh*sc-box.height)/2, m=0.04;
+  let sx=(gr.left-box.left+ox)/sc, sy=(gr.top-box.top+oy)/sc, sw=gr.width/sc, sh=gr.height/sc;
+  sx-=sw*m; sy-=sh*m; sw*=1+2*m; sh*=1+2*m; sx=Math.max(0,sx); sy=Math.max(0,sy); sw=Math.min(vw-sx,sw); sh=Math.min(vh-sy,sh);
+  const k=Math.min(1,1600/Math.max(sw,sh));
+  const c=document.createElement('canvas'); c.width=Math.round(sw*k); c.height=Math.round(sh*k); c.getContext('2d').drawImage(video,sx,sy,sw,sh,0,0,c.width,c.height);
   const blob=await new Promise(ok=>c.toBlob(ok,'image/jpeg',.9)); c.width=c.height=0;
   detenerCamara(); back();
   fotoElegida(V,blob);
@@ -503,14 +544,21 @@ actividad:{ html(){
 }},
 
 /* ---------- Cámara en vivo ---------- */
+recorte:{ html(){
+  return `${cabecera()}<h1 class="md">Ajustar recorte</h1><p class="sub">Mové las esquinas para dejar afuera lo que sobra.</p>
+  <div class="crop"><div class="cropin" id="crop"><div class="clip"><img id="cropImg" alt="Foto a recortar"><div class="rect" id="cropRect"></div></div>
+   <span class="h" data-h="tl"></span><span class="h" data-h="tr"></span><span class="h" data-h="bl"></span><span class="h" data-h="br"></span></div></div>
+  <button class="btn pri save" data-act="aplicarRecorte">Usar este recorte</button>`;
+}, enter(){ iniciarRecorte(); }},
+
 fotoCam:{ html(){
   return `${cabecera()}<h1 class="md">Foto del producto</h1>
-  <div class="cam" id="camBox" style="margin-top:16px"><video id="video" playsinline muted autoplay></video><p class="msg" id="camMsg">Abriendo la cámara…</p></div>
+  <div class="cam" id="camBox" style="margin-top:16px"><video id="video" playsinline muted autoplay></video><div class="guia" id="guia"></div><p class="msg" id="camMsg">Abriendo la cámara…</p></div>
   <div style="display:flex;align-items:center;justify-content:center;gap:24px;margin-top:16px">
    <label for="galFoto" class="link" style="min-width:90px;text-align:right">Galería</label>
    <button type="button" class="shutter" data-act="disparar" aria-label="Sacar la foto"><span></span></button>
    <span style="min-width:90px"></span></div>
-  <p class="help" style="text-align:center">Apoyalo sobre una mesa, sin la mano, y que entre entero.</p>`;
+  <p class="help" style="text-align:center">Que entre entero en el marco y que no haya otras cosas adentro.</p>`;
 }, enter(){ iniciarFotoCam(); }},
 
 camara:{ html(){
@@ -774,11 +822,13 @@ const ACCIONES={
   escribirEn(){ scanIntent={tipo:'guardarEn',caja:V.p.id}; go('escanear',{}); },
   foto(){ guardarBorrador(); go('fotoCam',{}); },
   disparar(){ disparar(); },
+  ajustar(){ guardarBorrador(); go('recorte',{}); },
+  aplicarRecorte(){ aplicarRecorte(); },
   aMano(){ go('escanear',{}); },
   limpiarQ(){ V.f.q=''; render(); $('#q')?.focus(); },
   async fotoAlterna(){ const vista=V, f=vista.f; const usarCut=!f._sinFondo;
     try{
-      if(usarCut&&!f._cut){ f._bg='Sacando el fondo…'; pintarFoto(vista); const png=await sacarFondo(f._orig); f._cut=await encuadrar(png,{transparente:true}); if(!f._cut) throw new Error('vacío'); }
+      if(usarCut&&!f._cut){ f._bg='Sacando el fondo…'; pintarFoto(vista); const png=await sacarFondo(f._orig); f._cut=await encuadrar(await soloElPrincipal(png),{transparente:true}); if(!f._cut) throw new Error('vacío'); }
       f._bg='Guardando…'; pintarFoto(vista); await subirFotoBlob(vista,usarCut?f._cut:f._orig,usarCut);
     }catch(e){ toast(usarCut?'No pude sacar el fondo de esta foto.':'No se pudo subir la foto.'); }
     f._bg=null; pintarFoto(vista); },
@@ -886,15 +936,43 @@ function fotoHTML(f){
   if(!f.foto) return `<button type="button" class="drop" data-act="foto">${ico('cam',22)}Sacar foto</button>`;
   const estado=f._bg?`<span class="tag" style="align-self:flex-start;display:inline-flex;gap:6px;align-items:center"><svg class="spin" viewBox="0 0 100 100" aria-hidden="true" style="width:14px;height:14px;margin:0"><path d="${SOL}" fill="#a35e47"/></svg>${esc(f._bg)}</span>`:'';
   const alt=!f._bg&&f._orig?`<button type="button" class="link" style="padding:4px 0" data-act="fotoAlterna">${f._sinFondo?'Usar la foto original':'Sacarle el fondo'}</button>`:'';
+  const aj=!f._bg&&f._blob?`<button type="button" class="link" style="padding:4px 0" data-act="ajustar">Ajustar recorte</button>`:'';
   return `<button type="button" class="drop con" data-act="foto"><img src="${f._prev||fotoUrl(f.foto)}" alt="Foto cargada"></button>${estado}
-   <div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:-6px">${alt}<button type="button" class="link" style="padding:4px 0" data-act="foto">Sacar otra</button></div>`;
+   <div style="display:flex;gap:4px 16px;flex-wrap:wrap;margin-top:-6px">${aj}${alt}<button type="button" class="link" style="padding:4px 0" data-act="foto">Sacar otra</button></div>`;
 }
 function pintarFoto(vista){ if(V!==vista) return; const z=$('#fotoZona'); if(z) z.innerHTML=fotoHTML(vista.f); }
 async function subirFotoBlob(vista,blob,sinFondo){
   const r=await call('subirFoto',await aBase64(blob),'image/jpeg','muestra-'+(vista.p.codigo||'')+(sinFondo?'-sinfondo':'')+'.jpg');
   if(vista.f._prev) URL.revokeObjectURL(vista.f._prev);
-  vista.f.foto=r.id; vista.f._prev=URL.createObjectURL(blob); vista.f._sinFondo=sinFondo;
+  vista.f.foto=r.id; vista.f._prev=URL.createObjectURL(blob); vista.f._blob=blob; vista.f._sinFondo=sinFondo;
   if(V===vista) guardarBorrador();
+}
+// El recortador a veces deja cosas parecidas del fondo (otra botella, un pote).
+// Nos quedamos con la mancha más grande y cercana al centro, y borramos el resto.
+async function soloElPrincipal(png){
+  const img=await abrirImagen(png); const w=img.width,h=img.height;
+  const c=document.createElement('canvas'); c.width=w; c.height=h; const g=c.getContext('2d',{willReadFrequently:true}); g.drawImage(img,0,0); soltar(img);
+  const id=g.getImageData(0,0,w,h), d=id.data;
+  const k=Math.max(1,Math.ceil(Math.max(w,h)/260)), W=Math.ceil(w/k), H=Math.ceil(h/k);
+  const on=new Uint8Array(W*H);
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){ const px=Math.min(w-1,x*k+(k>>1)), py=Math.min(h-1,y*k+(k>>1)); on[y*W+x]=d[(py*w+px)*4+3]>110?1:0; }
+  // separa uniones finas: erosión de 1 celda
+  const er=new Uint8Array(W*H);
+  for(let y=1;y<H-1;y++) for(let x=1;x<W-1;x++){ const i=y*W+x; er[i]=on[i]&on[i-1]&on[i+1]&on[i-W]&on[i+W]; }
+  const lab=new Int32Array(W*H); let n=0; const comps=[];
+  for(let i=0;i<W*H;i++){ if(!er[i]||lab[i]) continue; n++; let area=0,cx=0,cy=0; const st=[i]; lab[i]=n;
+    while(st.length){ const j=st.pop(); area++; const x=j%W,y=(j/W)|0; cx+=x; cy+=y;
+      for(const q of [j-1,j+1,j-W,j+W]){ if(q>=0&&q<W*H&&er[q]&&!lab[q]&&Math.abs((q%W)-x)<=1){ lab[q]=n; st.push(q); } } }
+    const dx=cx/area/W-0.5, dy=cy/area/H-0.5; comps.push({n,area,score:area*(1-Math.min(0.8,Math.hypot(dx,dy)))}); }
+  if(comps.length<=1) return png;
+  const best=comps.sort((a,b)=>b.score-a.score)[0];
+  if(comps.reduce((a,c)=>a+c.area,0)===best.area) return png;
+  // dilata 2 celdas para recuperar el borde perdido en la erosión
+  const keep=new Uint8Array(W*H);
+  for(let y=0;y<H;y++) for(let x=0;x<W;x++){ if(lab[y*W+x]!==best.n) continue; for(let yy=Math.max(0,y-2);yy<=Math.min(H-1,y+2);yy++) for(let xx=Math.max(0,x-2);xx<=Math.min(W-1,x+2);xx++) keep[yy*W+xx]=1; }
+  for(let y=0;y<h;y++){ const ry=((y/k)|0)*W; for(let x=0;x<w;x++){ if(!keep[ry+((x/k)|0)]) d[(y*w+x)*4+3]=0; } }
+  g.putImageData(id,0,0);
+  const out=await new Promise(ok=>c.toBlob(ok,'image/png')); c.width=c.height=0; return out;
 }
 async function recortarDeFondo(vista,chica,token){
   const f=vista.f; const vivo=()=>f._token===token;
@@ -902,7 +980,7 @@ async function recortarDeFondo(vista,chica,token){
     f._bg='Sacando el fondo…'; pintarFoto(vista);
     const png=await sacarFondo(chica,p=>{ if(vivo()){ f._bg=`Bajando el recortador ${Math.round(p*100)}% (solo la primera vez)`; pintarFoto(vista); } });
     if(!vivo()) return;
-    const cut=await encuadrar(png,{transparente:true}); if(!vivo()) return;
+    const cut=await encuadrar(await soloElPrincipal(png),{transparente:true}); if(!vivo()) return;
     if(!cut) throw new Error('vacío');
     f._cut=cut; f._bg='Guardando el recorte…'; pintarFoto(vista);
     await subirFotoBlob(vista,cut,true);
