@@ -17,6 +17,7 @@ const HOJAS = {
   Productos:   ['codigo', 'nombre', 'marca', 'cliente', 'proyecto', 'alto', 'ancho', 'prof', 'peso', 'foto', 'creado', 'actualizado', 'por'],
   Stock:       ['codigo', 'caja', 'cant', 'at'],
   Movimientos: ['at', 'tipo', 'codigo', 'nombre', 'desde', 'hacia', 'cant', 'nota', 'por'],
+  Prestamos:   ['id', 'codigo', 'nombre', 'cant', 'desde', 'a', 'hasta', 'nota', 'por', 'at', 'devuelto', 'vuelveA', 'devueltoPor'],
 };
 const MOVS_A_ENVIAR = 400;   // los últimos N movimientos que viajan a la app
 
@@ -34,7 +35,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
-    const fns = { getData, guardarCaja, guardarProducto, ingresar, mover, subirFoto, historial };
+    const fns = { getData, guardarCaja, guardarProducto, ingresar, mover, transaccion, devolverPrestamo, subirFoto, historial };
     const fn = fns[body.fn];
     if (!fn) throw new Error('Función desconocida: ' + body.fn);
     return json_(fn.apply(null, body.args || []));
@@ -78,8 +79,21 @@ function carpetaFotos_() {
 
 /* ───────────── Lectura ───────────── */
 
+function hoja_(nombre) {
+  const ss = SpreadsheetApp.getActive();
+  let sh = ss.getSheetByName(nombre);
+  if (!sh && nombre === 'Prestamos') {          // hojas nuevas se crean solas
+    sh = ss.insertSheet(nombre);
+    const cols = HOJAS[nombre];
+    sh.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+    sh.getRange(1, 1, sh.getMaxRows(), cols.length).setNumberFormat('@');
+  }
+  return sh;
+}
+
 function filas_(nombre) {
-  const sh = SpreadsheetApp.getActive().getSheetByName(nombre);
+  const sh = hoja_(nombre);
   if (!sh) throw new Error('Falta la hoja "' + nombre + '". Ejecutá configurar().');
   const n = sh.getLastRow() - 1;
   if (n < 1) return [];
@@ -101,6 +115,7 @@ function getData() {
     productos: filas_('Productos').map(limpiar_),
     stock: filas_('Stock').map(function (s) { return { codigo: s.codigo, caja: s.caja, cant: Number(s.cant) || 0, at: Number(s.at) || 0 }; }),
     movs: movs.slice(-MOVS_A_ENVIAR).reverse().map(function (m) { const x = limpiar_(m); x.at = Number(x.at) || 0; x.cant = Number(x.cant) || 0; return x; }),
+    prestamos: filas_('Prestamos').filter(function (p) { return !p.devuelto; }).map(function (p) { const x = limpiar_(p); x.cant = Number(x.cant) || 0; x.at = Number(x.at) || 0; return x; }),
   };
 }
 
@@ -121,7 +136,7 @@ function conCandado_(fn) {
 function bump_() { PropertiesService.getScriptProperties().setProperty('rev', String(Date.now())); }
 
 function escribir_(nombre, obj, fila) {
-  const sh = SpreadsheetApp.getActive().getSheetByName(nombre);
+  const sh = hoja_(nombre);
   const cols = HOJAS[nombre];
   const valores = [cols.map(function (c) { return obj[c] === undefined || obj[c] === null ? '' : String(obj[c]); })];
   const f = fila || sh.getLastRow() + 1;
@@ -227,4 +242,65 @@ function subirFoto(base64, mime, nombre) {
   const file = carpetaFotos_().createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
   return { id: file.getId() };
+}
+
+/** Movimiento con varios productos a la vez, como en BoxHero.
+ *  d = { tipo: 'ingresar'|'sacar'|'mover'|'prestar', items: [{codigo, cant, desde}],
+ *        caja (destino para ingresar/mover), motivo (sacar: devolver|usada|descartar),
+ *        a, hasta (prestar), nota, por } */
+function transaccion(d) {
+  return conCandado_(function () {
+    const tipo = ['ingresar', 'sacar', 'mover', 'prestar'].indexOf(d.tipo) >= 0 ? d.tipo : null;
+    if (!tipo) throw new Error('Tipo de movimiento desconocido.');
+    const items = (d.items || []).filter(function (x) { return Math.floor(Number(x.cant)) > 0; });
+    if (!items.length) throw new Error('No hay productos para registrar.');
+    if ((tipo === 'ingresar' || tipo === 'mover') && !cajaExiste_(d.caja)) throw new Error('Elegí la caja.');
+    if (tipo === 'prestar' && !texto_(d.a)) throw new Error('Falta a quién se presta.');
+    const prods = {}; filas_('Productos').forEach(function (p) { prods[p.codigo] = p; });
+    const motivo = ['devolver', 'usada', 'descartar'].indexOf(d.motivo) >= 0 ? d.motivo : 'descartar';
+    const nota = texto_(d.nota, 200), por = texto_(d.por, 60), ahora = Date.now();
+    // primero validar todo, después escribir (para no dejar movimientos a medias)
+    items.forEach(function (x) {
+      x.codigo = texto_(x.codigo, 60); x.cant = Math.floor(Number(x.cant));
+      if (!prods[x.codigo]) throw new Error('El producto ' + x.codigo + ' no está cargado.');
+      if (tipo !== 'ingresar') {
+        const st = filas_('Stock').filter(function (s) { return s.codigo === x.codigo && s.caja === x.desde; })[0];
+        const hay = st ? Number(st.cant) || 0 : 0;
+        if (hay < x.cant) throw new Error('De ' + prods[x.codigo].nombre + ' hay ' + hay + ' en esa caja.');
+        if (tipo === 'mover' && x.desde === d.caja) throw new Error(prods[x.codigo].nombre + ': el destino es la misma caja.');
+      }
+    });
+    items.forEach(function (x, i) {
+      const nombre = prods[x.codigo].nombre;
+      if (tipo === 'ingresar') sumarStock_(x.codigo, d.caja, x.cant);
+      else sumarStock_(x.codigo, x.desde, -x.cant);
+      if (tipo === 'mover') sumarStock_(x.codigo, d.caja, x.cant);
+      let notaMov = nota, tipoMov = { ingresar: 'agregar', mover: 'mover', prestar: 'prestar', sacar: motivo }[tipo];
+      if (tipo === 'prestar') {
+        notaMov = 'a ' + texto_(d.a, 60) + (d.hasta ? ', hasta ' + texto_(d.hasta, 10) : '') + (nota ? '. ' + nota : '');
+        escribir_('Prestamos', { id: 'p-' + ahora + '-' + i, codigo: x.codigo, nombre: nombre, cant: x.cant, desde: x.desde,
+          a: texto_(d.a, 60), hasta: texto_(d.hasta, 10), nota: nota, por: por, at: ahora, devuelto: '', vuelveA: '', devueltoPor: '' });
+      }
+      escribir_('Movimientos', { at: ahora, tipo: tipoMov, codigo: x.codigo, nombre: nombre,
+        desde: tipo === 'ingresar' ? '' : x.desde, hacia: (tipo === 'ingresar' || tipo === 'mover') ? d.caja : '',
+        cant: x.cant, nota: notaMov, por: por });
+    });
+    return getData();
+  });
+}
+
+/** Vuelve un préstamo a una caja. */
+function devolverPrestamo(d) {
+  return conCandado_(function () {
+    const p = filas_('Prestamos').filter(function (x) { return x.id === d.id; })[0];
+    if (!p) throw new Error('No encontré ese préstamo.');
+    if (p.devuelto) throw new Error('Ese préstamo ya se devolvió.');
+    if (!cajaExiste_(d.caja)) throw new Error('Elegí a qué caja vuelve.');
+    sumarStock_(p.codigo, d.caja, Number(p.cant) || 0);
+    p.devuelto = Date.now(); p.vuelveA = d.caja; p.devueltoPor = texto_(d.por, 60);
+    escribir_('Prestamos', p, p._fila);
+    escribir_('Movimientos', { at: Date.now(), tipo: 'devolucion', codigo: p.codigo, nombre: p.nombre, desde: '', hacia: d.caja,
+      cant: Number(p.cant) || 0, nota: 'lo tenía ' + p.a, por: texto_(d.por, 60) });
+    return getData();
+  });
 }
