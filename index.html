@@ -551,7 +551,7 @@ function grupoCaja(id,filas,{sub}={}){ const c=S.cajas.get(id)||{};
 const fab=(intent,texto)=>`${scanLabel(intent,'fab',`<span class="shape">${shape(GALLETA,44,'#a35e47')}<svg class="ico" width="20" height="20" viewBox="0 0 24 24"><path d="${I.scan}"/></svg></span>${esc(texto)}`)}`;
 const unidades=n=>n===1?'1 unidad':`${n} unidades`;
 
-const ACC=[['ingresar','Ingresar','inn'],['sacar','Sacar','out'],['mover','Mover','arrow'],['prestar','Prestar','user']];
+const ACC=[['ingresar','Ingresar','inn'],['sacar','Sacar','out'],['mover','Mover','arrow'],['devolver','Devolver','user']];
 function vencido(p){ return p.hasta&&p.hasta<hoyISO(); }
 function hoyISO(){ const d=new Date(); d.setMinutes(d.getMinutes()-d.getTimezoneOffset()); return d.toISOString().slice(0,10); }
 const fechaCorta=iso=>{ if(!iso) return ''; const [y,m,d]=iso.split('-'); return `${d}/${m}`; };
@@ -559,16 +559,12 @@ function filaPrestamo(p){ const v=vencido(p);
   return `<button class="prest${v?' vencido':''}" data-go="devolver" data-id="${esc(p.id)}"><span class="ph" style="flex:none;width:40px;height:40px;border-radius:12px;background:var(--fill);display:flex;align-items:center;justify-content:center;overflow:hidden">${fotoMini(S.productos.get(p.codigo))}</span><span class="tx"><b>${esc(p.nombre||prodNom(p.codigo))}</b><span>${esc(p.a)}${p.hasta?` · ${v?'venció':'vuelve'} el ${esc(fechaCorta(p.hasta))}`:''}</span></span><span class="qty"${v?' style="background:var(--red)"':''}>${p.cant}</span></button>`; }
 function cuerpoInicio(){
   const cs=cajasOrden(); const unid=[...S.stock.values()].reduce((a,s)=>a+(s.cant>0?s.cant:0),0);
-  const movs=S.movs.slice(0,3); const tab=V.f.tab||'cajas';
-  const pres=[...S.prestamos].sort((a,b)=>(a.hasta||'9').localeCompare(b.hasta||'9'));
-  const prods=[...S.productos.values()].map(p=>({...p,tot:totalDe(p.codigo)})).filter(p=>p.tot>0).sort((a,b)=>a.nombre.localeCompare(b.nombre,'es'));
+  const movs=S.movs.slice(0,3);
   return `${miNombre?'':`<div class="card" style="background:#f6ece8"><div class="f"><label for="minombre">¿Quién sos?</label><input class="in" id="minombre" data-f="minombre" placeholder="Tu nombre" autocomplete="given-name" value="${esc(V.f.minombre||'')}"></div><button class="btn pri" data-act="guardarNombre">Listo</button><p class="help" style="margin:0">Tu nombre queda en cada movimiento que cargues.</p></div>`}
-  <div class="acciones">${ACC.map(([k,l,ic],i)=>`<button class="accion${i===0?' acc':''}" data-mov="${k}"><span class="bub">${ico(ic,18,'stroke:#fff')}</span>${l}</button>`).join('')}</div>
-  ${pres.length?`<div class="sec"><h2>Prestadas</h2><span class="m">${pres.filter(vencido).length?`<b style="color:var(--red-ink)">${pres.filter(vencido).length} vencidas</b> · `:''}${pres.length}</span></div><div class="grp">${pres.slice(0,5).map(filaPrestamo).join('')}</div>`:''}
-  <div class="seg" role="tablist"><button role="tab" data-tab="cajas" aria-selected="${tab==='cajas'}">Cajas</button><button role="tab" data-tab="productos" aria-selected="${tab==='productos'}">Productos</button></div>
-  ${tab==='productos'?`<div class="sec" style="margin-top:14px"><span class="m">${prods.length} productos</span><span class="m">${unidades(unid)}</span></div>
-   ${prods.length?`<div class="grp">${prods.map(p=>`<button class="row-p" data-go="producto" data-codigo="${esc(p.codigo)}"><span class="ph">${fotoMini(p)}</span><span class="tx"><b>${esc(p.nombre)}</b><span>${esc([p.marca,p.cliente].filter(Boolean).join(' · '))}</span></span><b style="font-size:17px;font-weight:900;font-variant-numeric:tabular-nums" class="n-acc">${p.tot}</b></button>`).join('')}</div>`:`<div class="empty"><b>Sin productos guardados</b></div>`}`
-  :cuerpoCajas(cs,unid)}
+  <div class="sec"><h2>Cajas</h2>${cs.length?`<span class="m">${unidades(unid)}</span>`:''}</div>
+  ${cs.length?`<div class="list">${cs.map(c=>{ const u=stockEn(c.id).reduce((a,s)=>a+s.cant,0); return `<button class="item" data-go="caja" data-id="${esc(c.id)}"><span class="ic">${ico('box',22,'stroke:#000;stroke-width:2')}</span><span class="tx"><b>${esc(c.nombre)}</b><span>${esc(c.lugar||'Sin lugar')}</span></span><span class="n"><b>${u}</b><span>${u===1?'unidad':'unidades'}</span></span></button>`; }).join('')}</div>
+   <button class="link acc" data-go="nuevaCaja" style="margin-top:4px">+ Nueva caja</button>`
+   :`<div class="empty"><b>Todavía no hay cajas</b><p>Creá la primera, imprimí su etiqueta y pegala en la caja o el estante.</p><button class="btn pri big" data-go="nuevaCaja">${ico('plus',20)}Crear la primera caja</button></div>`}
   ${movs.length?`<div class="sec"><h2>Actividad</h2><button class="link acc" style="padding:0" data-go="actividad">Ver toda</button></div><ol class="feed">${movs.map(textoMov).join('')}</ol>`:''}`;
 }
 function cuerpoCajas(cs,unid){
@@ -590,7 +586,7 @@ inicio:{ html(){
 
 /* ---------- Movimiento (como BoxHero): tipo + escanear varios + aplicar ---------- */
 mov:{ html(){
-  const f=V.f; if(!f._init){ f._init=1; f.tipo=V.p.tipo||'ingresar'; f.lineas=[]; f.caja=V.p.caja||''; f.motivo='devolver'; f.a=''; f.hasta=sumarDias(7); f.nota='';
+  const f=V.f; if(!f._init){ f._init=1; f.tipo=V.p.tipo||'ingresar'; f.lineas=[]; f.caja=V.p.caja||''; f.motivo='usada'; f.a=''; f.hasta=sumarDias(7); f.nota='';
     if(V.p.codigo&&S.productos.has(V.p.codigo)) agregarLinea(V.p.codigo,true); }
   return `${cabecera()}
   <div class="seg seg4" role="tablist" aria-label="Tipo de movimiento">${ACC.map(([k,l])=>`<button role="tab" data-tipo="${k}" aria-selected="${f.tipo===k}">${l}</button>`).join('')}</div>
@@ -684,7 +680,7 @@ producto:{ html(){
   <div class="sec"><h2>Historial</h2></div>
   ${hist?(hist.length?`<ol class="feed">${hist.map(textoMov).join('')}</ol>`:`<p class="help">Sin movimientos.</p>`):`<p class="help">Cargando…</p>`}
   <p class="foot">${c.startsWith('MU-')?'Código interno':'Código'} ${esc(c)}${c.startsWith('MU-')?` · <button class="link acc" style="padding:0;font-size:12.5px" data-go="etiqueta" data-codigo="${esc(c)}">Etiqueta</button>`:''}</p>`;
-}, enter(){ cargarHist(); }},
+}, enter(){ cargarHist(); }, reenter(){ cargarHist(); }},
 
 /* ---------- Producto nuevo / editar ---------- */
 ingreso:{ html(){
@@ -807,7 +803,7 @@ function cajaPorDefecto(codigo){ const f=V.f; const st=stockDe(codigo); if(f.des
 function maxLinea(l){ return V.f.tipo==='ingresar'?9999:(stockDe(l.codigo).find(s=>s.caja===l.desde)?.cant||0); }
 function agregarLinea(codigo,silencio){
   const f=V.f, p=S.productos.get(codigo);
-  if(f.tipo!=='ingresar'&&!stockDe(codigo).length){ if(!silencio) avisoCam(`No hay ${p?.nombre||codigo} para ${f.tipo==='prestar'?'prestar':f.tipo}`,true); return; }
+  if(f.tipo!=='ingresar'&&!stockDe(codigo).length){ if(!silencio) avisoCam(`No hay ${p?.nombre||codigo} para ${f.tipo}`,true); return; }
   let l=f.lineas.find(x=>x.codigo===codigo);
   if(l){ if(l.cant<maxLinea(l)) l.cant++; else { if(!silencio) avisoCam(`No hay más de ${maxLinea(l)} en esa caja`,true); return; } }
   else { l={codigo,cant:1,desde:f.tipo==='ingresar'?'':cajaPorDefecto(codigo)}; f.lineas.unshift(l); }
@@ -821,8 +817,9 @@ function movCampos(){
   const sel=(id,val,label,excepto)=>`<div class="f"><label for="${id}" class="lbl">${label}</label><select class="in" id="${id}" data-f="${id.replace('mv_','')}"><option value="">Elegí la caja…</option>${cs.filter(c=>c.id!==excepto).map(c=>`<option value="${esc(c.id)}" ${c.id===val?'selected':''}>${esc(c.nombre)}</option>`).join('')}</select></div>`;
   if(f.tipo==='ingresar') return `<div class="d-card">${sel('mv_caja',f.caja,'A qué caja')}<p class="help" style="margin:-6px 0 0;color:#c9c7c7">O escaneá el QR de la caja.</p></div>`;
   if(f.tipo==='mover') return `<div class="d-card">${sel('mv_caja',f.caja,'A qué caja van')}<p class="help" style="margin:-6px 0 0;color:#c9c7c7">O escaneá el QR de la caja de destino.</p></div>`;
-  if(f.tipo==='sacar') return `<div class="card"><span class="lbl">Por qué sale</span><div class="chips">${[['devolver','Devuelta al cliente'],['usada','Usada'],['descartar','Descartada']].map(([k,l])=>`<button type="button" class="chip" data-motivo="${k}" aria-pressed="${f.motivo===k}">${l}</button>`).join('')}</div>
+  if(f.tipo==='sacar') return `<div class="card"><span class="lbl">Por qué sale</span><div class="chips">${[['usada','Usada'],['descartar','Descartada']].map(([k,l])=>`<button type="button" class="chip" data-motivo="${k}" aria-pressed="${f.motivo===k}">${l}</button>`).join('')}</div>
     <div class="f"><label for="mv_nota">Nota <span class="opt">(opcional)</span></label><input class="in" id="mv_nota" data-f="nota" value="${esc(f.nota)}" placeholder="Se usó en el prototipo de BP-0007"></div></div>`;
+  if(f.tipo==='devolver') return `<div class="card"><div class="f"><label for="mv_nota">Nota <span class="opt">(opcional)</span></label><input class="in" id="mv_nota" data-f="nota" value="${esc(f.nota)}" placeholder="Se le devolvió a Unilever en la reunión"></div></div>`;
   const personas=[...new Set([...S.prestamos.map(p=>p.a),...S.movs.filter(m=>m.tipo==='prestar').map(m=>(m.nota||'').replace(/^a /,'').split(',')[0])].filter(Boolean))];
   return `<div class="card"><div class="f"><label for="mv_a">A quién</label><input class="in" id="mv_a" data-f="a" list="personas" value="${esc(f.a)}" placeholder="Nombre del vendedor o cliente" autocomplete="off"><datalist id="personas">${personas.map(x=>`<option value="${esc(x)}">`).join('')}</datalist></div>
    <div class="grid2"><div class="f"><label for="mv_hasta">Vuelve el</label><input class="in" id="mv_hasta" data-f="hasta" type="date" value="${esc(f.hasta)}"></div>
@@ -839,7 +836,7 @@ function movLineas(){
 }
 function movCuerpo(){
   const f=V.f, n=f.lineas.length, u=f.lineas.reduce((a,l)=>a+l.cant,0);
-  const verbo={ingresar:'Ingresar',sacar:'Sacar',mover:'Mover',prestar:'Prestar'}[f.tipo];
+  const verbo={ingresar:'Ingresar',sacar:'Sacar',mover:'Mover',devolver:'Devolver'}[f.tipo];
   return `<div id="movCampos">${movCampos()}</div>
   <div class="sec" style="margin-top:18px"><h2>${n?`${n} ${n===1?'producto':'productos'}`:'Productos'}</h2>${n?`<span class="m">${unidades(u)}</span>`:''}</div>
   <div id="movLineas" style="margin-top:8px">${movLineas()}</div>
@@ -853,7 +850,7 @@ function movSug(){ const q=norm(V.f.buscar||''); if(q.length<2) return '';
 function pintarMov(){ const c=$('#movCuerpo'); if(!c) return; const a=document.activeElement, id=a&&a.id, pos=a&&a.selectionStart; c.innerHTML=movCuerpo(); if(id){ const el=$('#'+id); if(el){ el.focus(); try{ if(pos!=null) el.setSelectionRange(pos,pos); }catch(e){} } } }
 function pintarLineas(){ const c=$('#movCuerpo'); if(!c) return; const l=$('#movLineas'); if(l) l.innerHTML=movLineas(); const n=V.f.lineas.length,u=V.f.lineas.reduce((a,x)=>a+x.cant,0);
   const h=c.querySelector('.sec h2'); if(h) h.textContent=n?`${n} ${n===1?'producto':'productos'}`:'Productos'; const m=c.querySelector('.sec .m'); if(m) m.textContent=n?unidades(u):''; else if(n){ pintarMov(); return; }
-  const b=c.querySelector('[data-act="aplicarMov"]'); if(b){ b.disabled=!n; b.textContent=n?`${({ingresar:'Ingresar',sacar:'Sacar',mover:'Mover',prestar:'Prestar'})[V.f.tipo]} ${unidades(u)}`:'Agregá productos'; } }
+  const b=c.querySelector('[data-act="aplicarMov"]'); if(b){ b.disabled=!n; b.textContent=n?`${({ingresar:'Ingresar',sacar:'Sacar',mover:'Mover',devolver:'Devolver'})[V.f.tipo]} ${unidades(u)}`:'Agregá productos'; } }
 function codigoEnMov(raw){
   const t=String(raw||'').trim(); if(!t) return; const f=V.f;
   let caja=null, codigo=null;
@@ -995,10 +992,10 @@ const ACCIONES={
     if((f.tipo==='ingresar'||f.tipo==='mover')&&!f.caja){ toast(f.tipo==='mover'?'Elegí a qué caja van.':'Elegí la caja.'); return; }
     if(f.tipo==='prestar'&&!(f.a||'').trim()){ toast('Escribí a quién se lo prestás.'); $('#mv_a')?.focus(); return; }
     if(f.tipo==='mover'&&f.lineas.some(l=>l.desde===f.caja)){ toast('Algún producto ya está en la caja de destino.'); return; }
-    const u=f.lineas.reduce((a,l)=>a+l.cant,0), tipo=f.tipo;
-    const d=await escribir('transaccion',[{tipo,items:f.lineas.map(l=>({codigo:l.codigo,cant:l.cant,desde:l.desde})),caja:f.caja,motivo:f.motivo,a:(f.a||'').trim(),hasta:f.hasta,nota:(f.nota||'').trim(),por:miNombre}]);
+    const u=f.lineas.reduce((a,l)=>a+l.cant,0), tipo=f.tipo==='devolver'?'sacar':f.tipo, motivo=f.tipo==='devolver'?'devolver':f.motivo, verbo=f.tipo;
+    const d=await escribir('transaccion',[{tipo,items:f.lineas.map(l=>({codigo:l.codigo,cant:l.cant,desde:l.desde})),caja:f.caja,motivo,a:(f.a||'').trim(),hasta:f.hasta,nota:(f.nota||'').trim(),por:miNombre}]);
     if(!d) return;
-    toast({ingresar:'Ingresaste',sacar:'Sacaste',mover:'Moviste',prestar:'Prestaste'}[tipo]+' '+unidades(u)); back();
+    toast({ingresar:'Ingresaste',sacar:'Sacaste',mover:'Moviste',devolver:'Devolviste'}[verbo]+' '+unidades(u)); back();
   },
   async devolverPrestamo(){
     const f=V.f; if(!f.caja){ toast('Elegí a qué caja vuelve.'); return; }
