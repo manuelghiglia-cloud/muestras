@@ -282,6 +282,8 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 .aviso-hist b{display:block;font-size:15px;color:var(--acc-ink)}
 .aviso-hist svg{flex:none;margin-top:2px}
 .row-p.hist .ph{filter:grayscale(1);opacity:.7}
+.falta{display:flex;align-items:center;gap:12px;width:100%;margin-top:12px;padding:12px 16px;border:0;border-radius:20px;background:var(--acc-soft);color:var(--ink);text-align:left;font:inherit;font-size:13px;cursor:pointer;min-height:44px}
+.falta span{flex:1;display:flex;flex-direction:column}.falta b{font-size:14.5px;color:var(--acc-ink)}
 </style>
 </head>
 <body>
@@ -305,7 +307,7 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-const APP_VERSION='202611121258';
+const APP_VERSION='202611121320';
 async function chequearVersion(){ try{ if(location.protocol==='file:') return; const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'}); const nueva=(await r.text()).trim();
   if(nueva&&nueva!==APP_VERSION){ const u=new URL(location.href); if(u.searchParams.get('v')===nueva) return; u.searchParams.set('v',nueva); location.replace(u.toString()); } }catch(e){} }
 chequearVersion();
@@ -318,7 +320,7 @@ const QR_CAJA='MUESTRAS:CAJA:', QR_PROD='MUESTRAS:PROD:';
 const I={
   scan:'M4 8V5a1 1 0 0 1 1-1h3 M16 4h3a1 1 0 0 1 1 1v3 M20 16v3a1 1 0 0 1-1 1h-3 M8 20H5a1 1 0 0 1-1-1v-3 M7 12h10',
   box:'M3 7.5l9-4.5 9 4.5v9L12 21l-9-4.5z M3 7.5l9 4.5 9-4.5 M12 12v9',
-  back:'M15 5l-7 7 7 7', home:'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
+  back:'M15 5l-7 7 7 7', chev:'M9 5l7 7-7 7', home:'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
   plus:'M12 5v14 M5 12h14', search:'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M20 20l-4-4',
   prod:'M4 7h16v13H4z M8 7V4h8v3 M9 12h6', check:'M5 12l5 5 9-10', arrow:'M5 12h14 M13 6l6 6-6 6',
   undo:'M9 14L4 9l5-5 M4 9h11a5 5 0 0 1 0 10h-3', trash:'M4 7h16 M9 7V4h6v3 M6 7l1 13h10l1-13',
@@ -335,6 +337,18 @@ const norm=s=>String(s??'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''
 const keyOf=s=>String(s).replace(/[^A-Za-z0-9_\-.~:@+]/g,'-').slice(0,150);
 const rid=(n=6)=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('');
 const plural=(n,a,b)=>n===1?`1 ${a}`:`${n} ${b}`;
+function faltaDe(p){ const f=[]; if(!p.foto) f.push('foto'); if(!(p.alto&&p.ancho&&p.prof)) f.push('medidas'); return f; }
+function textoFalta(f){ return f.length===2?'Falta la foto y las medidas':f[0]==='foto'?'Falta la foto':'Faltan las medidas'; }
+function fichasIncompletas(){ return [...S.productos.values()].filter(p=>totalDe(p.codigo)>0&&faltaDe(p).length).map(p=>p.codigo); }
+// Recorre una lista de fichas para completar, una por una (foto y medidas primero).
+function completarFichas(codigos,imgs){ if(!codigos.length) return; go('ingreso',{codigo:codigos[0],editar:1,cola:codigos.slice(1),imgs:imgs||{},total:codigos.length,i:1}); }
+function siguienteFicha(){ const p=V.p; borrarBorrador(); salir(); V=pila.pop()||{view:'inicio',p:{},f:{}};
+  if(p.cola&&p.cola.length) go('ingreso',{codigo:p.cola[0],editar:1,cola:p.cola.slice(1),imgs:p.imgs,total:p.total,i:p.i+1});
+  else { render(); toast('Fichas listas'); } }
+function fotoMedidasHTML(f,principal){ return `<div class="card"${principal?' style="margin-top:14px"':''}><span class="lbl">Foto y medidas${principal?'':' <span class="opt">(opcional)</span>'}</span>
+   <div id="fotoZona" style="display:flex;flex-direction:column;gap:10px">${fotoHTML(f)}</div>
+   <div class="grid2">${[['alto','Alto (mm)'],['ancho','Ancho (mm)'],['prof','Profundidad (mm)'],['peso','Peso (g)']].map(([k,l])=>`<div class="f"><label for="${k}" style="font-size:12.5px;font-weight:700;color:var(--ink-2)">${l}</label><input class="in" id="${k}" data-f="${k}" inputmode="decimal" value="${esc(f[k])}"></div>`).join('')}</div>
+  </div>`; }
 function salidaDe(c){ let x=S.salidas&&S.salidas[c]; if(!x){ const m=S.movs.find(m=>m.codigo===c&&['devolver','usada','descartar'].includes(m.tipo)); if(m) x={tipo:m.tipo,at:m.at,por:m.por}; } return x||null; }
 function textoSalida(c,corto){ const x=salidaDe(c); if(!x) return corto?'Ya no está en el estudio':'Ya no está en el estudio.';
   const q={devolver:'Se devolvió al cliente',usada:'Se usó',descartar:'Se descartó'}[x.tipo]||'Salió'; return `${q} ${cuando(x.at)}${!corto&&x.por?` (${x.por})`:''}${corto?'':'.'}`; }
@@ -627,6 +641,7 @@ function cuerpoInicio(){
   const cs=cajasOrden(); const unid=[...S.stock.values()].reduce((a,s)=>a+(s.cant>0?s.cant:0),0);
   const movs=S.movs.slice(0,3);
   return `${miNombre?'':`<div class="card" style="background:var(--acc-soft)"><div class="f"><label for="minombre">¿Quién sos?</label><input class="in" id="minombre" data-f="minombre" placeholder="Tu nombre" autocomplete="given-name" value="${esc(V.f.minombre||'')}"></div><button class="btn pri" data-act="guardarNombre">Listo</button><p class="help" style="margin:0">Tu nombre queda en cada movimiento que cargues.</p></div>`}
+  ${(()=>{ const fi=fichasIncompletas(); return fi.length?`<button class="item" data-act="completarTodas" style="margin-top:14px"><span class="ic">${ico('cam',22,'stroke:#000;stroke-width:2')}</span><span class="tx"><b>${fi.length} ${fi.length===1?'ficha para completar':'fichas para completar'}</b><span>Sin foto o sin medidas</span></span>${ico('chev',18,'stroke:var(--ink-3)')}</button>`:''; })()}
   ${(()=>{ const ap=apartados(); return ap.length?`<button class="item" data-go="apartados" style="margin-top:14px;background:var(--acc-soft)"><span class="ic">${ico('prod',22,'stroke:var(--acc-ink);stroke-width:2')}</span><span class="tx"><b>${ap.length} ${ap.length===1?'producto apartado':'productos apartados'}</b><span>No se completaron solos: cargalos a mano</span></span><span class="n"><b style="color:var(--acc-ink)">${ap.reduce((a,x)=>a+x.cant,0)}</b><span>${ap.reduce((a,x)=>a+x.cant,0)===1?'unidad':'unidades'}</span></span></button>`:''; })()}
   <div class="sec"><h2>Cajas</h2>${cs.length?`<span class="m">${unidades(unid)}</span>`:''}</div>
   ${cs.length?`<div class="list">${cs.map(c=>{ const u=stockEn(c.id).reduce((a,s)=>a+s.cant,0); return `<button class="item" data-go="caja" data-id="${esc(c.id)}"><span class="ic">${ico('box',22,'stroke:#000;stroke-width:2')}</span><span class="tx"><b>${esc(c.nombre)}</b><span>${esc(c.lugar||'Sin lugar')}</span></span><span class="n"><b>${u}</b><span>${u===1?'unidad':'unidades'}</span></span></button>`; }).join('')}</div>
@@ -761,6 +776,7 @@ producto:{ html(){
   ${p.foto?`<div class="photo"><img src="${fotoUrl(p.foto)}" alt="Foto de ${esc(p.nombre)}"></div>`:''}
   <h1 class="md" style="margin-top:${p.foto?'18px':'4px'}">${esc(p.nombre)}</h1>
   ${meta?`<div class="meta">${meta}</div>`:''}
+  ${totalDe(c)>0&&faltaDe(p).length?`<button class="falta" data-go="ingreso" data-codigo="${esc(c)}" data-editar="1">${ico('cam',18,'stroke:var(--acc-ink);stroke-width:2')}<span><b>${textoFalta(faltaDe(p))}</b>Completá la ficha</span>${ico('chev',16,'stroke:var(--acc-ink)')}</button>`:''}
   ${fichaChips(p.nombre).length?`<div class="meta" style="margin-top:6px" title="Leído del nombre del producto">${fichaChips(p.nombre).map(x=>`<span style="background:#fff;border:1.5px solid #e8e8e8">${esc(x)}</span>`).join('')}</div>`:''}
   ${!st.length&&!S.prestamos.some(x=>x.codigo===c)?`<div class="aviso-hist" role="note">${ico('box',20,'stroke:var(--acc-ink);stroke-width:2')}<span><b>Ya no está en el estudio</b>${salidaDe(c)?esc(textoSalida(c))+' ':''}La ficha queda para consultar fotos y medidas.</span></div>`:''}
   <div class="dark"${!st.length&&!S.prestamos.some(x=>x.codigo===c)?' hidden':''}><div class="between"><b style="font-size:17px">Dónde está</b><span style="font-size:13px;color:var(--on-dark)">${unidades(tot)}</span></div>
@@ -778,6 +794,7 @@ producto:{ html(){
 ingreso:{ html(){
   const ed=!!V.p.editar, c=V.p.codigo, f=V.f, cls=clientes();
   if(!f._init){ const p=S.productos.get(c)||{}; const cliCaja=V.p.caja&&S.cajas.get(V.p.caja)?.nombre?.split(' - ')[0]; Object.assign(f,{_init:1,_img:p.foto?null:(V.p.img||null),nombre:p.nombre||'',marca:p.marca||'',cliente:p.cliente||(cliCaja?(cls.find(x=>norm(x)===norm(cliCaja))||cliCaja):''),proyecto:p.proyecto||'',alto:p.alto||'',ancho:p.ancho||'',prof:p.prof||'',peso:p.peso||'',foto:p.foto||'',cant:f.cant||V.p.cant||1,destino:V.p.caja||''}); }
+  const modoFichas=!!V.p.cola; if(modoFichas&&!f._imgSet){ f._imgSet=1; if(!f.foto&&V.p.imgs&&V.p.imgs[c]) f._img=V.p.imgs[c]; }
   const enLista=cls.some(x=>norm(x)===norm(f.cliente));
   const otro=f._otro||(f.cliente&&!enLista)||!cls.length;
   const st=f._cat;
@@ -785,7 +802,8 @@ ingreso:{ html(){
     :st==='ok'?`<p class="status">${ico('check',14)}Completado solo. Revisalo.</p>`
     :st==='no'?`<p class="status muted">No lo encontré: escribilo vos.</p>`:''):'';
   return `${cabecera(`<span class="kicker" style="font-variant-numeric:tabular-nums">${c?esc(c):'Sin código'}</span>`)}
-  <h1 class="md">${ed?'Editar producto':'Producto nuevo'}</h1>
+  ${modoFichas?`<p class="kicker" style="margin-top:4px">Completá la ficha · ${V.p.i} de ${V.p.total}</p><h1 class="md">${esc(f.nombre||c)}</h1>`:`<h1 class="md">${ed?'Editar producto':'Producto nuevo'}</h1>`}
+  ${modoFichas?fotoMedidasHTML(f,true):''}
   <div class="card">
    <div class="f"><label for="nombre">Producto</label><input class="in" id="nombre" data-f="nombre" placeholder="Sedal Shampoo Ceramidas 340 ml" value="${esc(f.nombre)}" autocomplete="off">${status}<div id="fichaIn">${fichaHTML(f.nombre)}</div></div>
    <div class="grid2"><div class="f"><label for="marca">Marca</label><input class="in" id="marca" data-f="marca" value="${esc(f.marca)}" autocomplete="off"></div>
@@ -794,11 +812,9 @@ ingreso:{ html(){
    ${otro?`<input class="in" id="cliente" data-f="cliente" aria-labelledby="cli-l" placeholder="Nombre del cliente" value="${esc(enLista?'':f.cliente)}" autocomplete="off">`:''}</div>
   </div>
   ${ed||V.p.paraMov?'':`<div class="d-card">${selectorCaja('destino',f.destino,{label:'Dónde lo guardás'})}<div class="between" style="align-items:center"><span class="lbl">Cantidad</span>${stepper('cant',f.cant)}</div></div>`}
-  <div class="card"><span class="lbl">Foto y medidas <span class="opt">(opcional)</span></span>
-   <div id="fotoZona" style="display:flex;flex-direction:column;gap:10px">${fotoHTML(f)}</div>
-   <div class="grid2">${[['alto','Alto (mm)'],['ancho','Ancho (mm)'],['prof','Profundidad (mm)'],['peso','Peso (g)']].map(([k,l])=>`<div class="f"><label for="${k}" style="font-size:12.5px;font-weight:700;color:var(--ink-2)">${l}</label><input class="in" id="${k}" data-f="${k}" inputmode="decimal" value="${esc(f[k])}"></div>`).join('')}</div>
-  </div>
-  <button class="btn pri save" data-act="guardarIngreso">${V.p.paraMov?'Agregar a la lista':ed?'Guardar cambios':'Agregar'+(f.destino?` ${esc(f.cant)} a ${esc(cajaNom(f.destino))}`:'')}</button>`;
+  ${modoFichas?'':fotoMedidasHTML(f,false)}
+  ${modoFichas?`<div class="btns" style="margin-top:10px"><button class="btn" data-act="saltearFicha">Saltear</button><button class="btn" data-act="terminarFichas">Terminar después</button></div>`:''}
+  <button class="btn pri save" data-act="guardarIngreso">${modoFichas?(V.p.cola.length?'Guardar y seguir':'Guardar'):V.p.paraMov?'Agregar a la lista':ed?'Guardar cambios':'Agregar'+(f.destino?` ${esc(f.cant)} a ${esc(cajaNom(f.destino))}`:'')}</button>`;
 }, enter(){ if(!V.p.editar&&V.p.codigo&&!V.p.codigo.startsWith('MU-')) completarDesdeCatalogo(); }},
 
 /* ---------- Sumar unidades de un producto ya cargado ---------- */
@@ -995,7 +1011,7 @@ async function resolverNuevo(vista,l){
     const [t,r0]=await Promise.all([buscarEnTiendas(codigo),buscarProductoExterno(codigo)]);
     const r=t&&t.nombre?t:r0;
     if(r&&r.nombre&&miNombre){
-      const d=await call('guardarProducto',{codigo,nombre:r.nombre,marca:r.marca||'',cliente:clienteDeCaja(vista.f.caja)},miNombre); aplicar(d); delete l.pend;
+      const d=await call('guardarProducto',{codigo,nombre:r.nombre,marca:r.marca||'',cliente:clienteDeCaja(vista.f.caja)},miNombre); aplicar(d); delete l.pend; l.creado=1;
       if(r.imagen) l.img=r.imagen;
     } else l.pend='manual';
   }catch(e){ l.pend='manual'; }
@@ -1151,7 +1167,9 @@ const ACCIONES={
     const u=f.lineas.reduce((a,l)=>a+l.cant,0), tipo=f.tipo==='devolver'?'sacar':f.tipo, motivo=f.tipo==='devolver'?'devolver':f.motivo, verbo=f.tipo;
     const d=await escribir('transaccion',[{tipo,items:f.lineas.map(l=>({codigo:l.codigo,cant:l.cant,desde:l.desde})),caja:f.caja,motivo,a:(f.a||'').trim(),hasta:f.hasta,nota:(f.nota||'').trim(),por:miNombre}]);
     if(!d) return;
+    const nuevos=f.tipo==='ingresar'?f.lineas.filter(l=>l.creado&&faltaDe(S.productos.get(l.codigo)||{}).length):[]; const imgs={}; nuevos.forEach(l=>{ if(l.img) imgs[l.codigo]=l.img; });
     toast({ingresar:'Agregaste',sacar:'Sacaste',mover:'Moviste',devolver:'Devolviste'}[verbo]+' '+unidades(u)+(ap.length?` · ${ap.length} ${ap.length===1?'apartado':'apartados'} para completar`:'')); back();
+    if(nuevos.length) completarFichas(nuevos.map(l=>l.codigo),imgs);
   },
   async devolverPrestamo(){
     const f=V.f; if(!f.caja){ toast('Elegí a qué caja vuelve.'); return; }
@@ -1170,12 +1188,16 @@ const ACCIONES={
       f._bg='Guardando…'; pintarFoto(vista); await subirFotoBlob(vista,usarCut?f._cut:f._orig,usarCut);
     }catch(e){ toast(usarCut?'No pude sacar el fondo de esta foto.':'No se pudo subir la foto.'); }
     f._bg=null; pintarFoto(vista); },
+  completarTodas(){ completarFichas(fichasIncompletas(),{}); },
+  saltearFicha(){ siguienteFicha(); },
+  terminarFichas(){ borrarBorrador(); back(); },
   async guardarIngreso(){
     if(V.f._bgP&&V.f._bg){ const vista=V; overlay(spinner('Terminando la foto…')); await Promise.race([vista.f._bgP,new Promise(r=>setTimeout(r,30000))]); overlay(null); if(V!==vista) return; }
     const f=V.f, ed=!!V.p.editar; const nombre=(f.nombre||'').trim(); if(!nombre){ toast('Escribí el nombre del producto.'); $('#nombre')?.focus(); return; }
     const cant=Math.max(1,parseInt(f.cant,10)||1); if(!ed&&!V.p.paraMov&&!f.destino){ toast('Elegí en qué caja la guardás.'); return; }
     const codigo=V.p.codigo||('MU-'+rid(5));
     const producto={codigo,nombre,marca:(f.marca||'').trim(),cliente:(f.cliente||'').trim(),proyecto:(f.proyecto||'').trim(),alto:String(f.alto||'').trim(),ancho:String(f.ancho||'').trim(),prof:String(f.prof||'').trim(),peso:String(f.peso||'').trim(),foto:f.foto||''};
+    if(V.p.cola){ const d=await escribir('guardarProducto',[producto,miNombre]); if(!d) return; siguienteFicha(); return; }
     if(V.p.paraMov){ const d=await escribir('guardarProducto',[producto,miNombre]); if(!d) return; borrarBorrador(); back(); if(V.view==='mov'){ const l=V.f.lineas.find(x=>x.codigo===codigo); if(l){ delete l.pend; delete l.img; } else agregarLinea(codigo,true); pintarLineas(); } toast(ed?'Listo':'Agregado a la lista'); return; }
     const d=ed?await escribir('guardarProducto',[producto,miNombre]):await escribir('ingresar',[{producto,nuevo:true,caja:f.destino,cant,por:miNombre}]);
     if(!d) return;
