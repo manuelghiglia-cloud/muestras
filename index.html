@@ -267,9 +267,28 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 .shutter:active span{transform:scale(.88)}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
 @media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+#splash{position:fixed;inset:0;z-index:100;background:#fff;transition:opacity .3s ease}
+#splash.fuera{opacity:0;pointer-events:none}
+.sp-in{max-width:520px;margin:0 auto;padding:24px max(20px,env(safe-area-inset-left,0px)) 0 max(20px,env(safe-area-inset-right,0px));display:flex;flex-direction:column;align-items:flex-start}
+.sp-k{margin:0;font:700 13px var(--f);letter-spacing:.02em;color:var(--ink-3)}
+.sp-t{margin:6px 0 0;font:900 40px/0.98 var(--f);font-stretch:125%;letter-spacing:-0.03em;color:#000}
+.sp-sol{width:56px;height:56px;margin:30vh 0 16px;align-self:center;animation:spsol 2.4s linear infinite}
+@keyframes spsol{to{transform:rotate(360deg)}}
+.sp-msg{margin:0;align-self:center;text-align:center;font:600 15px/1.4 var(--f);color:var(--ink-2);min-height:42px;max-width:300px}
+.sp-re{margin-top:16px;width:100%;flex:none}
+@media (prefers-reduced-motion:reduce){.sp-sol{animation:none}#splash{transition:none}}
 </style>
 </head>
 <body>
+<div id="splash" role="status" aria-live="polite">
+  <div class="sp-in">
+    <p class="sp-k">Micropack</p>
+    <h1 class="sp-t">Stock diseño</h1>
+    <svg class="sp-sol" viewBox="0 0 100 100" aria-hidden="true"><path d="M100 50L99.6 53.2L98.3 56.4L96.6 59.3L94.7 62L92.9 64.6L91.6 67.2L90.7 70.1L90.1 73.1L89.5 76.4L88.7 79.7L87.3 82.7L85.4 85.4L82.7 87.3L79.7 88.7L76.4 89.5L73.1 90.1L70.1 90.7L67.2 91.6L64.6 92.9L62 94.7L59.3 96.6L56.4 98.3L53.2 99.6L50 100L46.8 99.6L43.6 98.3L40.7 96.6L38 94.7L35.4 92.9L32.8 91.6L29.9 90.7L26.9 90.1L23.6 89.5L20.3 88.7L17.3 87.3L14.6 85.4L12.7 82.7L11.3 79.7L10.5 76.4L9.9 73.1L9.3 70.1L8.4 67.2L7.1 64.6L5.3 62L3.4 59.3L1.7 56.4L0.4 53.2L0 50L0.4 46.8L1.7 43.6L3.4 40.7L5.3 38L7.1 35.4L8.4 32.8L9.3 29.9L9.9 26.9L10.5 23.6L11.3 20.3L12.7 17.3L14.6 14.6L17.3 12.7L20.3 11.3L23.6 10.5L26.9 9.9L29.9 9.3L32.8 8.4L35.4 7.1L38 5.3L40.7 3.4L43.6 1.7L46.8 0.4L50 0L53.2 0.4L56.4 1.7L59.3 3.4L62 5.3L64.6 7.1L67.2 8.4L70.1 9.3L73.1 9.9L76.4 10.5L79.7 11.3L82.7 12.7L85.4 14.6L87.3 17.3L88.7 20.3L89.5 23.6L90.1 26.9L90.7 29.9L91.6 32.8L92.9 35.4L94.7 38L96.6 40.7L98.3 43.6L99.6 46.8Z" fill="#a35e47"/></svg>
+    <p class="sp-msg" id="spMsg">Cargando las muestras…</p>
+    <button type="button" class="btn pri sp-re" id="spRe" hidden>Reintentar</button>
+  </div>
+</div>
 <main class="app" id="app" aria-live="polite"></main>
 <nav class="nav" id="nav" aria-label="Secciones"></nav>
 <input type="file" id="cam" accept="image/*" capture="environment" class="sr" tabindex="-1" aria-hidden="true">
@@ -281,7 +300,7 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-const APP_VERSION='202611121108';
+const APP_VERSION='202611121118';
 async function chequearVersion(){ try{ if(location.protocol==='file:') return; const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'}); const nueva=(await r.text()).trim();
   if(nueva&&nueva!==APP_VERSION){ const u=new URL(location.href); if(u.searchParams.get('v')===nueva) return; u.searchParams.set('v',nueva); location.replace(u.toString()); } }catch(e){} }
 chequearVersion();
@@ -533,8 +552,15 @@ function aplicar(d){
 function refrescar(){ if(V.view==='mov'){ pintarMov(); return; } if(['ingreso','agregar','mover','nuevaCaja','escanear','camara','fotoCam','recorte','devolver'].includes(V.view)) return;
   if(V.view==='inicio'&&document.activeElement&&document.activeElement.id==='q'){ const r=$('#res'); if(r) r.innerHTML=resultados(); return; }
   const y=window.scrollY; render(); window.scrollTo(0,y); if(V.view==='etiqueta') dibujarEtiqueta(); }
-async function cargar(){ try{ const d=await call('getData'); aplicar(d); conexion='ok';
-  if(V.view==='mov'){ pintarMov(); } else if(['ingreso','agregar','mover','nuevaCaja','devolver'].includes(V.view)){ const a=document.activeElement; if(!a||!['INPUT','TEXTAREA','SELECT'].includes(a.tagName)){ const y=window.scrollY; render(); window.scrollTo(0,y); } } else refrescar(); }catch(e){ if(conexion!=='ok'){ conexion='sin'; render(); } } }
+/* ----- Pantalla de carga: retiene hasta que lleguen las muestras ----- */
+const splashT0=Date.now(); let splashLento=setTimeout(()=>{ const m=$('#spMsg'); if(m&&!$('#splash').classList.contains('fuera')) m.textContent='Está tardando un poco más de lo normal…'; },6000);
+function ocultarSplash(){ const sp=$('#splash'); if(!sp||sp.classList.contains('fuera')) return; clearTimeout(splashLento);
+  setTimeout(()=>{ sp.classList.add('fuera'); setTimeout(()=>sp.remove(),350); },Math.max(0,500-(Date.now()-splashT0))); }
+function splashError(){ const sp=$('#splash'); if(!sp||sp.classList.contains('fuera')) return; clearTimeout(splashLento);
+  $('#spMsg').textContent='No pude cargar las muestras. Revisá la conexión y probá de nuevo.'; $('#spRe').hidden=false; sp.querySelector('.sp-sol').style.animationPlayState='paused'; }
+document.addEventListener('click',e=>{ if(e.target.id==='spRe'){ $('#spRe').hidden=true; $('#spMsg').textContent='Cargando las muestras…'; $('.sp-sol').style.animationPlayState=''; cargar(); } });
+async function cargar(){ try{ const d=await call('getData'); aplicar(d); conexion='ok'; ocultarSplash();
+  if(V.view==='mov'){ pintarMov(); } else if(['ingreso','agregar','mover','nuevaCaja','devolver'].includes(V.view)){ const a=document.activeElement; if(!a||!['INPUT','TEXTAREA','SELECT'].includes(a.tagName)){ const y=window.scrollY; render(); window.scrollTo(0,y); } } else refrescar(); }catch(e){ splashError(); if(conexion!=='ok'){ conexion='sin'; render(); } } }
 async function sondear(){ if(ocupado||document.hidden||conexion==='cargando') return;
   try{ const d=await call('getData'); if(d&&d.rev!==S.rev){ aplicar(d); conexion='ok'; refrescar(); } else if(conexion!=='ok'){ conexion='ok'; render(); } }catch(e){} }
 const spinner=t=>`<svg class="spin" viewBox="0 0 100 100" aria-hidden="true"><path d="${SOL}" fill="#a35e47"/></svg><b>${t}</b>`;

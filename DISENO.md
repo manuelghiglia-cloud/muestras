@@ -56,6 +56,7 @@ Pendiente: hoy conviven 12.5, 13, 13.5, 14, 14.5 y 15 px. Al tocar una pantalla,
 | Tarjeta oscura | `.d-card` | Para la decisión de destino (caja) |
 | Aviso de cámara | `#camOk` | Verde = leído, rojo = error, desaparece a los 1,8 s, con pip |
 | Toast | `toast()` | Confirma lo hecho con el mismo verbo del botón |
+| Pantalla de carga | `#splash` | Mismo encabezado que el inicio (no salta al desaparecer) + SOL girando + "Cargando las muestras…". A los 6 s: "Está tardando un poco más de lo normal…". Error: mensaje + Reintentar. Se va con fundido de 0,3 s, mínimo 0,5 s en pantalla |
 
 ## Lenguaje (UX copy)
 
