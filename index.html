@@ -3,10 +3,10 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>Muestras</title>
+<title>Stock diseño</title>
 <meta name="theme-color" content="#ffffff">
 <meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="Muestras">
+<meta name="apple-mobile-web-app-title" content="Stock diseño">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon-192.png">
@@ -268,7 +268,7 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-const APP_VERSION='202611120306';
+const APP_VERSION='202611120309';
 async function chequearVersion(){ try{ if(location.protocol==='file:') return; const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'}); const nueva=(await r.text()).trim();
   if(nueva&&nueva!==APP_VERSION){ const u=new URL(location.href); if(u.searchParams.get('v')===nueva) return; u.searchParams.set('v',nueva); location.replace(u.toString()); } }catch(e){} }
 chequearVersion();
@@ -585,7 +585,7 @@ const VIEWS={
 /* ---------- Inicio: buscar + cajas ---------- */
 inicio:{ html(){
   const q=V.f.q||'';
-  return `<div class="head"><div><p class="kicker">Micropack · Diseño</p><h1>Muestras</h1></div></div>
+  return `<div class="head"><div><p class="kicker">Micropack</p><h1>Stock diseño</h1></div></div>
   <div class="search">${ico('search',20,'stroke:#000;flex:none')}<label for="q" class="sr">Buscar muestras</label><input id="q" data-f="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="¿Tenemos…? Producto, marca o caja" value="${esc(q)}">${q?`<button class="x" data-act="limpiarQ" aria-label="Borrar búsqueda">${ico('plus',16,'transform:rotate(45deg)')}</button>`:''}</div>
   <div id="res">${q.trim()?resultados():cuerpoInicio()}</div>${fab({tipo:'abrir'},'Buscar escaneando')}`;
 }},
@@ -963,7 +963,7 @@ function dibujarEtiqueta(){
     words.forEach(w=>{ const t=(lines[lines.length-1]+' '+w).trim(); if(g.measureText(t).width>maxW&&lines[lines.length-1]) lines.push(w); else lines[lines.length-1]=t; });
     lines.slice(0,5).forEach((l,i)=>g.fillText(l,x,200+i*66));
     g.fillStyle='#464646'; g.font='700 40px Archivo, Arial, sans-serif'; g.fillText(V.p.codigo,x,H-110); }
-  g.fillStyle='#6f6d6d'; g.font='500 26px Archivo, Arial, sans-serif'; g.fillText('Escaneá con la app Muestras',x,H-60,maxW);
+  g.fillStyle='#6f6d6d'; g.font='500 26px Archivo, Arial, sans-serif'; g.fillText('Escaneá con la app Stock diseño',x,H-60,maxW);
   const url=c.toDataURL('image/png'); const img=$('#lbl'); if(img) img.src=url; V.f._png=c;
 }
 async function bajarEtiqueta(){
