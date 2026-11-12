@@ -115,8 +115,20 @@ function getData() {
     productos: filas_('Productos').map(limpiar_),
     stock: filas_('Stock').map(function (s) { return { codigo: s.codigo, caja: s.caja, cant: Number(s.cant) || 0, at: Number(s.at) || 0 }; }),
     movs: movs.slice(-MOVS_A_ENVIAR).reverse().map(function (m) { const x = limpiar_(m); x.at = Number(x.at) || 0; x.cant = Number(x.cant) || 0; return x; }),
+    salidas: ultimasSalidas_(movs),
     prestamos: filas_('Prestamos').filter(function (p) { return !p.devuelto; }).map(function (p) { const x = limpiar_(p); x.cant = Number(x.cant) || 0; x.at = Number(x.at) || 0; return x; }),
   };
+}
+
+/** Por producto, la última vez que salió del estudio (devuelto, usado o descartado). */
+function ultimasSalidas_(movs) {
+  const out = {};
+  movs.forEach(function (m) {
+    if (['devolver', 'usada', 'descartar'].indexOf(m.tipo) < 0) return;
+    const at = Number(m.at) || 0;
+    if (!out[m.codigo] || out[m.codigo].at <= at) out[m.codigo] = { tipo: m.tipo, at: at, por: m.por || '', cant: Number(m.cant) || 0 };
+  });
+  return out;
 }
 
 function historial(codigo) {
