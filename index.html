@@ -268,7 +268,7 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-const APP_VERSION='202611120309';
+const APP_VERSION='202611121148';
 async function chequearVersion(){ try{ if(location.protocol==='file:') return; const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'}); const nueva=(await r.text()).trim();
   if(nueva&&nueva!==APP_VERSION){ const u=new URL(location.href); if(u.searchParams.get('v')===nueva) return; u.searchParams.set('v',nueva); location.replace(u.toString()); } }catch(e){} }
 chequearVersion();
@@ -1137,7 +1137,7 @@ function fotoHTML(f){
 }
 function pintarFoto(vista){ if(V!==vista) return; const z=$('#fotoZona'); if(z) z.innerHTML=fotoHTML(vista.f); }
 async function subirFotoBlob(vista,blob,sinFondo){
-  const r=await call('subirFoto',await aBase64(blob),'image/jpeg','muestra-'+(vista.p.codigo||'')+(sinFondo?'-sinfondo':'')+'.jpg');
+  const r=await call('subirFoto',await aBase64(blob),'image/jpeg','muestra-'+(vista.p.codigo||'')+(sinFondo?'-sinfondo':'')+'.jpg',vista.f.foto||'');
   if(vista.f._prev) URL.revokeObjectURL(vista.f._prev);
   vista.f.foto=r.id; vista.f._prev=URL.createObjectURL(blob); vista.f._blob=blob; vista.f._sinFondo=sinFondo;
   if(V===vista) guardarBorrador();

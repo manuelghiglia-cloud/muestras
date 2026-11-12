@@ -174,6 +174,7 @@ function upsertProducto_(p, por) {
   });
   o.codigo = codigo;
   o.actualizado = Date.now();
+  if (ant && ant.foto && o.foto !== ant.foto) tirarFoto_(ant.foto); // la foto vieja ya no se usa
   if (!ant) { o.creado = Date.now(); o.por = texto_(por, 60); }
   escribir_('Productos', o, ant && ant._fila);
   return o;
@@ -234,14 +235,43 @@ function mover(d) {
   });
 }
 
-/** Recibe una foto en base64 (ya achicada por la app) y devuelve su id de Drive. */
-function subirFoto(base64, mime, nombre) {
+/** Recibe una foto en base64 (ya achicada por la app) y devuelve su id de Drive.
+ *  Si viene `reemplaza` (la foto anterior de esa misma carga), la manda a la papelera,
+ *  salvo que algún producto guardado todavía la use. */
+function subirFoto(base64, mime, nombre, reemplaza) {
   const bytes = Utilities.base64Decode(String(base64));
   if (bytes.length > 4 * 1024 * 1024) throw new Error('La foto es muy pesada.');
   const blob = Utilities.newBlob(bytes, mime || 'image/jpeg', texto_(nombre, 80) || ('muestra-' + Date.now() + '.jpg'));
   const file = carpetaFotos_().createFile(blob);
   file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  if (reemplaza && reemplaza !== file.getId()) {
+    const enUso = filas_('Productos').some(function (p) { return p.foto === reemplaza; });
+    if (!enUso) tirarFoto_(reemplaza);
+  }
   return { id: file.getId() };
+}
+
+/** Manda a la papelera de Drive una foto, solo si está en la carpeta de fotos de la app.
+ *  (La papelera guarda los archivos 30 días, por si hace falta recuperar alguno.) */
+function tirarFoto_(id) {
+  try {
+    const carpeta = carpetaFotos_().getId();
+    const f = DriveApp.getFileById(String(id));
+    const padres = f.getParents();
+    while (padres.hasNext()) { if (padres.next().getId() === carpeta) { f.setTrashed(true); return true; } }
+  } catch (e) {}
+  return false;
+}
+
+/** Limpieza de una sola vez: corré esta función desde el editor (botón Ejecutar)
+ *  y manda a la papelera las fotos de la carpeta que ningún producto usa. */
+function limpiarFotos() {
+  const usadas = {};
+  filas_('Productos').forEach(function (p) { if (p.foto) usadas[p.foto] = 1; });
+  const it = carpetaFotos_().getFiles(); let n = 0;
+  while (it.hasNext()) { const f = it.next(); if (!usadas[f.getId()]) { f.setTrashed(true); n++; } }
+  Logger.log('Fotos mandadas a la papelera: ' + n);
+  return n;
 }
 
 /** Movimiento con varios productos a la vez, como en BoxHero.
