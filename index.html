@@ -1,0 +1,751 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Muestras</title>
+<meta name="theme-color" content="#ffffff">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Muestras">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,400..900&display=swap">
+<style>
+:root{
+  color-scheme:light;
+  --paper:#ffffff; --fill:#f2f2f2; --fill-2:#e8e8e8; --line:#dcdcdc;
+  --ink:#000000; --ink-2:#464646; --ink-3:#6f6d6d; --on-dark:#c9c7c7; --dark-2:#262626;
+  --acc:#a35e47; --acc-ink:#8c4e3a; --acc-soft:#f6ece8; --acc-light:#c27b63;
+  --red:#b3261e; --red-ink:#8c1d18; --red-soft:#f9dedc;
+  --f:"Archivo",-apple-system,"Segoe UI",Roboto,Arial,sans-serif;
+  --spring:cubic-bezier(.34,1.56,.64,1); --ease:cubic-bezier(.2,.8,.2,1);
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--paper);color:var(--ink);font-family:var(--f);font-size:15px;line-height:1.4;-webkit-text-size-adjust:100%}
+body{padding-top:env(safe-area-inset-top,0px)}
+button,input,select,textarea{font:inherit;color:inherit}
+:focus-visible{outline:3px solid var(--acc);outline-offset:2px}
+[hidden]{display:none!important}
+.app{max-width:520px;margin:0 auto;padding:24px max(20px,env(safe-area-inset-left,0px)) calc(110px + env(safe-area-inset-bottom,0px)) max(20px,env(safe-area-inset-right,0px))}
+.kicker{margin:0;font-size:13px;font-weight:700;color:var(--ink-3);letter-spacing:.02em}
+h1{margin:6px 0 0;font-size:40px;line-height:.98;font-weight:900;font-stretch:125%;letter-spacing:-.03em;overflow-wrap:anywhere}
+h1.md{font-size:32px}
+.sub{margin:10px 0 0;font-size:15px;color:var(--ink-2)}
+h2{margin:26px 0 0;font-size:18px;font-weight:800}
+.row{display:flex;align-items:center;gap:10px}
+.between{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+.top{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:18px}
+.round{flex:none;width:48px;height:48px;border-radius:999px;background:var(--fill);border:0;display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--ink)}
+.round svg,.ico{fill:none;stroke:currentColor;stroke-width:2.2;stroke-linecap:round;stroke-linejoin:round}
+.tag{padding:6px 12px;border-radius:999px;background:var(--acc-soft);color:var(--acc-ink);font-size:12.5px;font-weight:800}
+
+.scan{margin-top:22px;display:flex;align-items:center;gap:16px;background:var(--ink);color:#fff;border-radius:28px;padding:20px;cursor:pointer;border:0;width:100%;text-align:left;transition:transform .25s var(--spring)}
+.scan:active{transform:scale(.98)}
+.scan .shape{position:relative;flex:none;width:64px;height:64px}
+.scan .shape svg{position:absolute}
+.scan b{display:block;font-size:26px;font-weight:900;font-stretch:125%;letter-spacing:-.02em}
+.scan span.s{font-size:14px;color:var(--on-dark)}
+.searchlink{margin-top:12px;width:100%;height:56px;border:0;border-bottom:2px solid var(--line);border-radius:16px 16px 4px 4px;background:var(--fill);padding:0 16px;display:flex;align-items:center;gap:10px;font-size:15px;color:var(--ink-2);cursor:pointer;text-align:left}
+.stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin-top:18px}
+.stat{background:var(--fill);border-radius:20px;padding:14px 14px 12px}
+.stat b{display:block;font-size:26px;font-weight:900;font-stretch:125%;font-variant-numeric:tabular-nums}
+.stat span{font-size:12.5px;font-weight:600;color:var(--ink-2)}
+.list{display:flex;flex-direction:column;gap:8px;margin-top:12px}
+.item{display:flex;align-items:center;gap:14px;background:var(--fill);border-radius:20px;padding:12px 16px 12px 12px;border:0;width:100%;text-align:left;cursor:pointer;color:var(--ink);min-height:64px}
+.item .ic{flex:none;width:44px;height:44px;border-radius:14px;background:var(--paper);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.item .ic img{width:100%;height:100%;object-fit:cover}
+.item .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
+.item .tx b{font-size:15px;font-weight:800;overflow-wrap:anywhere}
+.item .tx span{font-size:13px;color:var(--ink-2);overflow-wrap:anywhere}
+.item .n{flex:none;text-align:right;display:flex;flex-direction:column}
+.item .n b{font-size:16px;font-weight:800;font-variant-numeric:tabular-nums}
+.item .n span{font-size:11.5px;color:var(--ink-3)}
+.pill-n{flex:none;min-width:44px;height:36px;border-radius:999px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;padding:0 10px;font-size:15px;font-weight:800;font-variant-numeric:tabular-nums}
+.item.white{background:var(--paper)}
+.group{margin-top:12px;background:var(--fill);border-radius:28px;padding:16px}
+.group .between{padding:0 4px}
+.group .list{gap:6px;margin-top:10px}
+.feed{list-style:none;margin:12px 0 0;padding:4px 16px;background:var(--fill);border-radius:20px}
+.feed li{display:flex;gap:12px;padding:12px 0;border-bottom:1px solid var(--line)}
+.feed li:last-child{border-bottom:0}
+.dot{flex:none;margin-top:5px;width:10px;height:10px;border-radius:50%}
+.feed .m{font-size:12.5px;color:var(--ink-2)}
+
+.dark{margin-top:18px;background:var(--ink);color:#fff;border-radius:28px;padding:18px 20px}
+.dark .item{background:var(--dark-2);color:#fff}
+.dark .item .tx span,.dark .item .n span{color:var(--on-dark)}
+.dark .stats3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.dark .stats3 b{display:block;font-size:28px;font-weight:900;font-stretch:125%;font-variant-numeric:tabular-nums}
+.dark .stats3 span{font-size:12.5px;color:var(--on-dark)}
+.yes{display:flex;align-items:center;gap:12px}
+.yes b{font-size:40px;line-height:1;font-weight:900;font-stretch:125%;letter-spacing:-.03em}
+
+.btns{display:flex;gap:8px;margin-top:12px}
+.btn{flex:1;min-height:52px;border-radius:999px;border:0;background:var(--fill-2);color:var(--ink);display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:800;cursor:pointer;padding:0 16px;text-align:center;transition:transform .25s var(--spring)}
+.btn:active{transform:scale(.97)}
+.btn.pri{background:var(--ink);color:#fff}
+.btn.acc{background:var(--acc);color:#fff}
+.btn.big{min-height:56px;font-size:16px;width:100%;margin-top:20px}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+.link{border:0;background:none;padding:12px 4px;font-size:14.5px;font-weight:800;color:var(--ink);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+.link.acc{color:var(--acc-ink)}
+.help{margin:8px 4px 0;font-size:12.5px;color:var(--ink-2)}
+
+.card{margin-top:12px;background:var(--fill);border-radius:28px;padding:18px;display:flex;flex-direction:column;gap:16px}
+.f{display:flex;flex-direction:column;gap:6px;min-width:0}
+.f > label,.lbl{font-size:14px;font-weight:800}
+.lbl .opt,.f > label .opt{font-weight:600;color:var(--ink-2)}
+.in{width:100%;height:52px;border:0;border-bottom:2px solid var(--line);border-radius:16px 16px 4px 4px;background:var(--paper);padding:0 16px;font-size:16px;color:var(--ink);transition:border-color .2s var(--ease)}
+.in:focus{outline:none;border-bottom-color:var(--acc)}
+.in.onfill{background:var(--fill)}
+select.in{appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23000' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 16px center;padding-right:40px}
+textarea.in{height:auto;min-height:80px;padding:12px 16px}
+.grid3{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{min-height:44px;padding:0 16px;border:0;border-radius:999px;background:var(--paper);font-size:14.5px;font-weight:700;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--acc);color:#fff}
+.step{display:flex;align-items:center;gap:4px;background:var(--paper);border-radius:999px;padding:4px}
+.step button{width:44px;height:44px;border:0;border-radius:999px;background:var(--fill-2);font-size:22px;font-weight:800;cursor:pointer;line-height:1}
+.step button.p{background:var(--ink);color:#fff}
+.step input{width:64px;height:44px;border:0;background:transparent;text-align:center;font-size:22px;font-weight:900;font-stretch:125%;font-variant-numeric:tabular-nums;padding:0}
+.step input:focus{outline:none}
+.acts{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.act{min-height:88px;border:0;border-radius:22px;background:var(--fill);text-align:left;padding:14px;cursor:pointer;display:flex;flex-direction:column;justify-content:space-between;gap:8px;font-size:15px;font-weight:800;line-height:1.15}
+.act[aria-checked="true"]{background:var(--acc);color:#fff}
+.dest{display:flex;align-items:center;gap:12px;background:var(--dark-2);border-radius:18px;padding:12px 14px}
+.photo{margin-top:4px;height:200px;border-radius:28px;background:var(--fill);display:flex;align-items:center;justify-content:center;overflow:hidden}
+.photo img{width:100%;height:100%;object-fit:cover}
+.drop{height:88px;border:2px dashed var(--line);border-radius:20px;background:var(--paper);font-size:14.5px;font-weight:700;color:var(--ink-2);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:10px;overflow:hidden}
+.drop img{height:100%;width:100%;object-fit:cover}
+.kv{margin:12px 0 0;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.kv div{background:var(--paper);border-radius:16px;padding:10px 14px}
+.kv dt{font-size:12.5px;color:var(--ink-2)}
+.kv dd{margin:2px 0 0;font-size:18px;font-weight:800;font-variant-numeric:tabular-nums}
+.empty{margin-top:22px;background:var(--fill);border-radius:28px;padding:22px 20px}
+.empty b{display:block;font-size:24px;font-weight:900;font-stretch:125%;letter-spacing:-.02em}
+.empty p{margin:10px 0 0;color:var(--ink-2)}
+.banner{margin:0 0 14px;padding:12px 16px;border-radius:16px;background:var(--acc-soft);color:var(--acc-ink);font-size:13.5px;font-weight:600}
+.banner.err{background:var(--red-soft);color:var(--red-ink)}
+.label-prev{margin-top:16px;border-radius:20px;overflow:hidden;border:2px solid var(--fill-2)}
+.label-prev img{display:block;width:100%}
+
+.nav{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(14px + env(safe-area-inset-bottom,0px));width:min(488px,calc(100% - 32px));display:flex;gap:6px;background:var(--ink);border-radius:999px;padding:6px;z-index:10}
+.nav button,.nav label{flex:1;height:52px;border-radius:999px;border:0;background:transparent;color:#fff;display:flex;align-items:center;justify-content:center;gap:8px;font-size:14px;font-weight:800;cursor:pointer}
+.nav .on{background:#fff;color:var(--ink)}
+.nav .sc{background:var(--acc)}
+.overlay{position:fixed;inset:0;background:rgb(0 0 0/.72);z-index:30;display:flex;align-items:center;justify-content:center;padding:24px}
+.overlay .box{background:#fff;border-radius:28px;padding:24px;max-width:360px;width:100%;text-align:center}
+.overlay .box b{display:block;font-size:22px;font-weight:900;font-stretch:125%}
+.spin{width:56px;height:56px;margin:0 auto 14px;animation:spin 1.4s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(88px + env(safe-area-inset-bottom,0px));background:var(--ink);color:#fff;padding:12px 18px;border-radius:16px;font-size:14px;font-weight:600;z-index:40;max-width:calc(100% - 32px)}
+.cam{position:relative;margin-top:4px;border-radius:28px;overflow:hidden;background:#1c1c1c;aspect-ratio:3/4;max-height:62vh;width:100%}
+.cam video{width:100%;height:100%;object-fit:cover;display:block}
+.cam .marco{position:absolute;left:12%;right:12%;top:30%;bottom:30%;border-radius:20px;box-shadow:0 0 0 2000px rgb(0 0 0/.35)}
+.cam .marco i{position:absolute;width:34px;height:34px;border:4px solid var(--acc)}
+.cam .marco i:nth-child(1){left:-2px;top:-2px;border-right:0;border-bottom:0;border-radius:18px 0 0 0}
+.cam .marco i:nth-child(2){right:-2px;top:-2px;border-left:0;border-bottom:0;border-radius:0 18px 0 0}
+.cam .marco i:nth-child(3){left:-2px;bottom:-2px;border-right:0;border-top:0;border-radius:0 0 0 18px}
+.cam .marco i:nth-child(4){right:-2px;bottom:-2px;border-left:0;border-top:0;border-radius:0 0 18px 0}
+.cam .linea{position:absolute;left:16%;right:16%;top:50%;height:2px;background:var(--acc-light);animation:barrido 1.8s ease-in-out infinite alternate}
+@keyframes barrido{from{transform:translateY(-40px)}to{transform:translateY(40px)}}
+.cam .msg{position:absolute;left:16px;right:16px;bottom:14px;text-align:center;color:#fff;font-size:14px;font-weight:700;text-shadow:0 1px 3px rgb(0 0 0/.6)}
+.cam.err{display:flex;align-items:center;justify-content:center;padding:24px;aspect-ratio:auto;min-height:220px;text-align:center;color:#fff}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<main class="app" id="app" aria-live="polite"></main>
+<nav class="nav" id="nav" aria-label="Secciones"></nav>
+<input type="file" id="cam" accept="image/*" capture="environment" class="sr" tabindex="-1" aria-hidden="true">
+<input type="file" id="gal" accept="image/*" class="sr" tabindex="-1" aria-hidden="true">
+<input type="file" id="fotoIn" accept="image/*" capture="environment" class="sr" tabindex="-1" aria-hidden="true">
+<div class="overlay" id="overlay" hidden><div class="box" id="overlayBox"></div></div>
+<div class="toast" id="toast" role="status" hidden></div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
+<script>
+/* ============ Formas y constantes (las de Brief POP) ============ */
+const GALLETA='M100 50L99.2 53.2L97.1 56.2L94.4 58.8L91.7 61.2L89.8 63.5L89.1 66.2L89.3 69.4L89.8 73L90.1 76.8L89.4 80.3L87.5 82.9L84.5 84.5L80.8 85.2L77.1 85.3L73.7 85.5L71 86.4L68.9 88.3L67 91.1L65 94.3L62.6 97.2L59.7 99L56.5 99.3L53.2 98.1L50 96L47.1 93.7L44.5 91.9L41.8 91.3L38.8 91.7L35.5 92.8L31.8 93.9L28.2 94.2L25 93.3L22.6 91L21.1 87.7L20.2 84L19.5 80.5L18.4 77.7L16.4 75.8L13.6 74.3L10.2 73L6.8 71.3L4.1 69L2.7 66L2.8 62.6L4.1 59.1L5.9 55.8L7.4 52.8L8 50L7.4 47.2L5.9 44.2L4.1 40.9L2.8 37.4L2.7 34L4.1 31L6.8 28.7L10.2 27L13.6 25.7L16.4 24.2L18.4 22.3L19.5 19.5L20.2 16L21.1 12.3L22.6 9L25 6.7L28.2 5.8L31.8 6.1L35.5 7.2L38.8 8.3L41.8 8.7L44.5 8.1L47.1 6.3L50 4L53.2 1.9L56.5 0.7L59.7 1L62.6 2.8L65 5.7L67 8.9L68.9 11.7L71 13.6L73.7 14.5L77.1 14.7L80.8 14.8L84.5 15.5L87.5 17.1L89.4 19.7L90.1 23.2L89.8 27L89.3 30.6L89.1 33.8L89.8 36.5L91.7 38.8L94.4 41.2L97.1 43.8L99.2 46.8Z';
+const SOL='M100 50L99.6 53.2L98.3 56.4L96.6 59.3L94.7 62L92.9 64.6L91.6 67.2L90.7 70.1L90.1 73.1L89.5 76.4L88.7 79.7L87.3 82.7L85.4 85.4L82.7 87.3L79.7 88.7L76.4 89.5L73.1 90.1L70.1 90.7L67.2 91.6L64.6 92.9L62 94.7L59.3 96.6L56.4 98.3L53.2 99.6L50 100L46.8 99.6L43.6 98.3L40.7 96.6L38 94.7L35.4 92.9L32.8 91.6L29.9 90.7L26.9 90.1L23.6 89.5L20.3 88.7L17.3 87.3L14.6 85.4L12.7 82.7L11.3 79.7L10.5 76.4L9.9 73.1L9.3 70.1L8.4 67.2L7.1 64.6L5.3 62L3.4 59.3L1.7 56.4L0.4 53.2L0 50L0.4 46.8L1.7 43.6L3.4 40.7L5.3 38L7.1 35.4L8.4 32.8L9.3 29.9L9.9 26.9L10.5 23.6L11.3 20.3L12.7 17.3L14.6 14.6L17.3 12.7L20.3 11.3L23.6 10.5L26.9 9.9L29.9 9.3L32.8 8.4L35.4 7.1L38 5.3L40.7 3.4L43.6 1.7L46.8 0.4L50 0L53.2 0.4L56.4 1.7L59.3 3.4L62 5.3L64.6 7.1L67.2 8.4L70.1 9.3L73.1 9.9L76.4 10.5L79.7 11.3L82.7 12.7L85.4 14.6L87.3 17.3L88.7 20.3L89.5 23.6L90.1 26.9L90.7 29.9L91.6 32.8L92.9 35.4L94.7 38L96.6 40.7L98.3 43.6L99.6 46.8Z';
+const QR_CAJA='MUESTRAS:CAJA:', QR_PROD='MUESTRAS:PROD:';
+const I={
+  scan:'M4 8V5a1 1 0 0 1 1-1h3 M16 4h3a1 1 0 0 1 1 1v3 M20 16v3a1 1 0 0 1-1 1h-3 M8 20H5a1 1 0 0 1-1-1v-3 M7 12h10',
+  box:'M3 7.5l9-4.5 9 4.5v9L12 21l-9-4.5z M3 7.5l9 4.5 9-4.5 M12 12v9',
+  back:'M15 5l-7 7 7 7', home:'M3 11l9-7 9 7v9a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',
+  plus:'M12 5v14 M5 12h14', search:'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14z M20 20l-4-4',
+  prod:'M4 7h16v13H4z M8 7V4h8v3 M9 12h6', check:'M5 12l5 5 9-10', arrow:'M5 12h14 M13 6l6 6-6 6',
+  undo:'M9 14L4 9l5-5 M4 9h11a5 5 0 0 1 0 10h-3', trash:'M4 7h16 M9 7V4h6v3 M6 7l1 13h10l1-13',
+  cam:'M4 8h3l2-3h6l2 3h3v11H4z M12 17a4 4 0 1 0 0-8 4 4 0 0 0 0 8z', tag:'M3 12V4h8l10 10-8 8z M8 8h.01',
+  edit:'M3 17L17 3l4 4L7 21H3z',
+};
+const ico=(k,s=22,st='')=>`<svg class="ico" width="${s}" height="${s}" viewBox="0 0 24 24" aria-hidden="true" style="${st}"><path d="${I[k]}"/></svg>`;
+const shape=(d,s,fill)=>`<svg width="${s}" height="${s}" viewBox="0 0 100 100" aria-hidden="true"><path d="${d}" fill="${fill}"/></svg>`;
+
+/* ============ Utilidades ============ */
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const norm=s=>String(s??'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,'').trim();
+const keyOf=s=>String(s).replace(/[^A-Za-z0-9_\-.~:@+]/g,'-').slice(0,150);
+const rid=(n=6)=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('');
+const plural=(n,a,b)=>n===1?`1 ${a}`:`${n} ${b}`;
+function cuando(t){ if(!t) return ''; const d=new Date(t), now=new Date(), p=n=>String(n).padStart(2,'0');
+  const hm=`${p(d.getHours())}:${p(d.getMinutes())}`; const dias=Math.floor((new Date(now.toDateString())-new Date(d.toDateString()))/864e5);
+  if(dias===0) return 'hoy '+hm; if(dias===1) return 'ayer '+hm; if(dias<7) return ['dom','lun','mar','mié','jue','vie','sáb'][d.getDay()]+' '+hm;
+  return `${p(d.getDate())}/${p(d.getMonth()+1)}/${String(d.getFullYear()).slice(2)}`; }
+function toast(m){ const t=$('#toast'); t.textContent=m; t.hidden=false; clearTimeout(toast._t); toast._t=setTimeout(()=>t.hidden=true,3200); }
+function overlay(html){ if(!html){ $('#overlay').hidden=true; return; } $('#overlayBox').innerHTML=html; $('#overlay').hidden=false; }
+
+/* ============ Configuración ============ */
+// URL del Apps Script publicado como app web (Implementar > Nueva implementación > App web).
+const API='https://script.google.com/macros/s/AKfycbyCM_if8jlDnu-uyoLfpBh2RNAZ0F3henSJqD3sky73W-YyrZLRjg6Rd8r5cK9P-b4A/exec';
+// Dónde está publicado el catálogo de productos (GitHub Pages).
+const CATALOGO_URL='https://manuelghiglia-cloud.github.io/muestras/catalogo/';
+const IN_GAS=typeof google!=='undefined'&&google.script&&google.script.run;
+
+/* ============ Estado ============ */
+const S={cajas:new Map(), productos:new Map(), stock:new Map(), movs:[], rev:null};
+let conexion='cargando', puedeEscribir=true, ocupado=false;
+let V={view:'inicio', p:{}, f:{}}; const pila=[];
+let scanIntent={tipo:'abrir'};
+const lsGet=k=>{ try{ return localStorage.getItem(k); }catch(e){ return null; } };
+const lsSet=(k,v)=>{ try{ localStorage.setItem(k,v); }catch(e){} };
+let miNombre=lsGet('muestras-nombre')||'';
+const fotoUrl=id=>'https://drive.google.com/thumbnail?id='+encodeURIComponent(id)+'&sz=w800';
+
+/* ============ Consultas sobre los datos ============ */
+const cajasOrden=()=>[...S.cajas.entries()].map(([id,c])=>({id,...c})).sort((a,b)=>norm(a.nombre).localeCompare(norm(b.nombre),'es',{numeric:true}));
+const stockDe=codigo=>[...S.stock.values()].filter(s=>s.codigo===codigo&&s.cant>0);
+const stockEn=caja=>[...S.stock.values()].filter(s=>s.caja===caja&&s.cant>0);
+const totalDe=codigo=>stockDe(codigo).reduce((a,s)=>a+s.cant,0);
+const cajaNom=id=>S.cajas.get(id)?.nombre||'Caja borrada';
+const cajaCorta=id=>{ const n=cajaNom(id); return n.includes(' - ')?'Caja '+n.split(' - ').pop():n; };
+const prodNom=c=>S.productos.get(c)?.nombre||c;
+const clientes=()=>{ const set=new Set(); S.productos.forEach(p=>p.cliente&&set.add(p.cliente)); S.cajas.forEach(c=>{ if(c.nombre?.includes(' - ')) set.add(c.nombre.split(' - ')[0]); });
+  const m=new Map(); set.forEach(x=>{ const k=norm(x); if(!m.has(k)) m.set(k,x); }); return [...m.values()].sort((a,b)=>a.localeCompare(b,'es')); };
+const lugares=()=>[...new Set([...S.cajas.values()].map(c=>c.lugar).filter(Boolean))].sort();
+
+/* ============ Navegación ============ */
+function salir(){ if(V.view==='camara') detenerCamara(); }
+function go(view,p={},f={}){ salir(); pila.push(V); V={view,p,f}; render(); window.scrollTo(0,0); if(VIEWS[view].enter) VIEWS[view].enter(); }
+function back(){ salir(); V=pila.pop()||{view:'inicio',p:{},f:{}}; render(); window.scrollTo(0,0); if(VIEWS[V.view]&&VIEWS[V.view].reenter) VIEWS[V.view].reenter(); }
+function home(){ salir(); pila.length=0; V={view:'inicio',p:{},f:{}}; render(); window.scrollTo(0,0); }
+
+/* ============ Lectura de códigos ============ */
+let zxingP=null;
+function cargarZXing(){ if(window.ZXing) return Promise.resolve(); if(zxingP) return zxingP;
+  zxingP=new Promise((ok,ko)=>{ const s=document.createElement('script'); s.src='https://cdn.jsdelivr.net/npm/@zxing/library@0.21.3/umd/index.min.js'; s.onload=ok; s.onerror=()=>{ zxingP=null; ko(new Error('zxing')); }; document.head.appendChild(s); }); return zxingP; }
+async function abrirImagen(file){
+  if(window.createImageBitmap){ try{ return await createImageBitmap(file,{imageOrientation:'from-image'}); }catch(e){ try{ return await createImageBitmap(file); }catch(e2){} } }
+  const url=URL.createObjectURL(file); const img=new Image(); img.src=url; await img.decode(); return img;
+}
+function lienzo(img,max,rot){ const w0=img.width, h0=img.height, k=Math.min(1,max/Math.max(w0,h0)); const w=Math.round(w0*k), h=Math.round(h0*k);
+  const c=document.createElement('canvas'); const g=c.getContext('2d',{willReadFrequently:true});
+  if(rot){ c.width=h; c.height=w; g.translate(h,0); g.rotate(Math.PI/2); } else { c.width=w; c.height=h; }
+  g.drawImage(img,0,0,w,h); return c; }
+async function leerCodigo(file){
+  const img=await abrirImagen(file);
+  if('BarcodeDetector' in window){
+    try{ const det=new BarcodeDetector({formats:['qr_code','ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf']});
+      const r=await det.detect(img); if(r&&r.length) return r[0].rawValue; }catch(e){}
+  }
+  await cargarZXing();
+  for(const [max,rot] of [[1400,false],[900,false],[1400,true],[2000,false],[900,true]]){
+    const t=decodificar(lienzo(img,max,rot),true); if(t) return t;
+  }
+  return null;
+}
+let lectorZX=null, lectorZXfuerte=null;
+function decodificar(canvas,fuerte){
+  const Z=window.ZXing; if(!Z) return null;
+  const mk=tryHarder=>{ const h=new Map(); h.set(Z.DecodeHintType.POSSIBLE_FORMATS,[Z.BarcodeFormat.QR_CODE,Z.BarcodeFormat.EAN_13,Z.BarcodeFormat.EAN_8,Z.BarcodeFormat.UPC_A,Z.BarcodeFormat.UPC_E,Z.BarcodeFormat.CODE_128,Z.BarcodeFormat.CODE_39,Z.BarcodeFormat.ITF]); if(tryHarder) h.set(Z.DecodeHintType.TRY_HARDER,true); const r=new Z.MultiFormatReader(); r.setHints(h); return r; };
+  const reader=fuerte?(lectorZXfuerte=lectorZXfuerte||mk(true)):(lectorZX=lectorZX||mk(false));
+  try{ const r=reader.decode(new Z.BinaryBitmap(new Z.HybridBinarizer(new Z.HTMLCanvasElementLuminanceSource(canvas)))); return r?r.getText():null; }catch(e){ return null; }
+}
+
+/* ---------- Cámara en vivo ---------- */
+let camStream=null, camTimer=null, camDet=null, camViva=false;
+function camMsg(t){ const m=$('#camMsg'); if(m) m.textContent=t; }
+function camError(t){ const c=$('#camBox'); if(c){ c.className='cam err'; c.innerHTML=`<p style="margin:0;font-size:15px;font-weight:700">${esc(t)}</p>`; } }
+async function iniciarCamara(){
+  const video=$('#video'); if(!video) return;
+  if(!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){ camError('Este navegador no deja usar la cámara en vivo. Usá “Sacar foto”.'); return; }
+  try{ camStream=await navigator.mediaDevices.getUserMedia({audio:false,video:{facingMode:{ideal:'environment'},width:{ideal:1920},height:{ideal:1080}}}); }
+  catch(e){ camError('No pude abrir la cámara. Revisá que el navegador tenga permiso, o usá “Sacar foto”.'); return; }
+  if(V.view!=='camara'){ detenerCamara(); return; }
+  video.srcObject=camStream; video.setAttribute('playsinline',''); video.muted=true;
+  try{ await video.play(); }catch(e){}
+  camViva=true;
+  try{ const [track]=camStream.getVideoTracks(); const cap=track.getCapabilities&&track.getCapabilities(); if(cap&&cap.focusMode&&cap.focusMode.includes('continuous')) await track.applyConstraints({advanced:[{focusMode:'continuous'}]}); }catch(e){}
+  if('BarcodeDetector' in window){ try{ const sop=await BarcodeDetector.getSupportedFormats(); const quiero=['qr_code','ean_13','ean_8','upc_a','upc_e','code_128','code_39','itf'].filter(f=>sop.includes(f)); if(quiero.length) camDet=new BarcodeDetector({formats:quiero}); }catch(e){ camDet=null; } }
+  if(!camDet){ try{ await cargarZXing(); }catch(e){ camError('No se pudo cargar el lector. Revisá la conexión o usá “Sacar foto”.'); return; } }
+  camMsg('Apuntá al código de barras o al QR');
+  const lienzoCam=document.createElement('canvas'); const g=lienzoCam.getContext('2d',{willReadFrequently:true});
+  let vuelta=0;
+  const paso=async()=>{
+    if(!camViva) return;
+    let txt=null;
+    try{
+      if(video.readyState>=2&&video.videoWidth){
+        if(camDet){ const r=await camDet.detect(video); if(r&&r.length) txt=r[0].rawValue; }
+        else{
+          const vw=video.videoWidth, vh=video.videoHeight; const cw=Math.round(vw*0.8), ch=Math.round(vh*0.5);
+          const k=Math.min(1,1000/cw); lienzoCam.width=Math.round(cw*k); lienzoCam.height=Math.round(ch*k);
+          g.drawImage(video,(vw-cw)/2,(vh-ch)/2,cw,ch,0,0,lienzoCam.width,lienzoCam.height);
+          txt=decodificar(lienzoCam,(vuelta++%4)===3);
+        }
+      }
+    }catch(e){}
+    if(txt&&camViva){ if(navigator.vibrate) try{ navigator.vibrate(80); }catch(e){} detenerCamara(); manejarCodigo(txt); return; }
+    camTimer=setTimeout(paso,camDet?150:220);
+  };
+  paso();
+}
+function detenerCamara(){ camViva=false; clearTimeout(camTimer); camTimer=null; if(camStream){ camStream.getTracks().forEach(t=>t.stop()); camStream=null; } }
+document.addEventListener('visibilitychange',()=>{ if(document.hidden&&V.view==='camara') detenerCamara(); else if(!document.hidden&&V.view==='camara'&&!camViva){ render(); iniciarCamara(); } });
+async function alElegirFoto(e){
+  const file=e.target.files&&e.target.files[0]; e.target.value=''; if(!file) return;
+  overlay(`<svg class="spin" viewBox="0 0 100 100" aria-hidden="true"><path d="${SOL}" fill="#a35e47"/></svg><b>Leyendo el código…</b>`);
+  let txt=null; try{ txt=await leerCodigo(file); }catch(err){ txt=null; }
+  overlay(null);
+  if(!txt){ go('escanear',{fallo:true}); return; }
+  manejarCodigo(txt);
+}
+function manejarCodigo(raw){
+  const t=String(raw||'').trim(); if(!t) return;
+  let caja=null, codigo=null;
+  if(t.startsWith(QR_CAJA)) caja=t.slice(QR_CAJA.length);
+  else if(t.startsWith(QR_PROD)) codigo=t.slice(QR_PROD.length);
+  else { const porNombre=cajasOrden().find(c=>norm(c.nombre)===norm(t)); if(porNombre) caja=porNombre.id; else codigo=t.replace(/\s+/g,''); }
+  const it=scanIntent; scanIntent={tipo:'abrir'};
+  while(V.view==='escanear'||V.view==='camara') V=pila.pop()||{view:'inicio',p:{},f:{}};
+  if(caja && !S.cajas.has(caja)){ toast('Ese QR es de una caja que ya no está en la lista.'); render(); return; }
+  if(it.tipo==='destino'){
+    if(!caja){ toast('Eso es un producto. Escaneá el QR de la caja.'); render(); return; }
+    V.f[it.campo||'destino']=caja; render(); toast('Caja elegida: '+cajaNom(caja)); return;
+  }
+  if(caja){ go('caja',{id:caja}); return; }
+  if(it.tipo==='guardarEn'){ S.productos.has(codigo)?go('agregar',{codigo,caja:it.caja}):go('ingreso',{codigo,caja:it.caja}); return; }
+  S.productos.has(codigo)?go('producto',{codigo}):go('ingreso',{codigo});
+}
+
+/* ============ Servidor (Apps Script) ============ */
+async function api(fn,args){
+  let r;
+  if(fn==='getData') r=await fetch(API+'?api=get&t='+Date.now());
+  else r=await fetch(API,{method:'POST',headers:{'Content-Type':'text/plain;charset=utf-8'},body:JSON.stringify({fn,args})});
+  if(!r.ok) throw new Error('HTTP '+r.status);
+  const j=await r.json(); if(j&&j.error) throw new Error(j.error); return j;
+}
+function call(fn,...args){
+  if(!IN_GAS) return api(fn,args);
+  return new Promise((res,rej)=>{ try{ google.script.run.withSuccessHandler(res).withFailureHandler(e=>rej(e instanceof Error?e:new Error(String(e&&e.message||e))))[fn](...args); }catch(e){ rej(e); } });
+}
+function aplicar(d){
+  if(!d||!d.cajas) return;
+  S.rev=d.rev;
+  S.cajas=new Map(d.cajas.map(c=>[c.id,c]));
+  S.productos=new Map(d.productos.map(p=>[p.codigo,p]));
+  S.stock=new Map(d.stock.map(x=>[x.codigo+'|'+x.caja,x]));
+  S.movs=d.movs||[];
+}
+function refrescar(){ if(['ingreso','agregar','mover','nuevaCaja','escanear','camara'].includes(V.view)) return;
+  if(V.view==='buscar'){ const r=$('#res'); if(r) r.innerHTML=resultados(); return; }
+  const y=window.scrollY; render(); window.scrollTo(0,y); if(V.view==='etiqueta') dibujarEtiqueta(); }
+async function cargar(){ try{ const d=await call('getData'); aplicar(d); conexion='ok'; refrescar(); }catch(e){ if(conexion!=='ok'){ conexion='sin'; render(); } } }
+async function sondear(){ if(ocupado||document.hidden||conexion==='cargando') return;
+  try{ const d=await call('getData'); if(d&&d.rev!==S.rev){ aplicar(d); conexion='ok'; refrescar(); } else if(conexion!=='ok'){ conexion='ok'; render(); } }catch(e){} }
+const spinner=t=>`<svg class="spin" viewBox="0 0 100 100" aria-hidden="true"><path d="${SOL}" fill="#a35e47"/></svg><b>${t}</b>`;
+async function escribir(fn,args,msg){
+  if(!miNombre){ toast('Primero decinos quién sos (arriba de todo, en Inicio).'); return null; }
+  ocupado=true; overlay(spinner(msg||'Guardando…'));
+  try{ const d=await call(fn,...args); aplicar(d); conexion='ok'; return d; }
+  catch(e){ const m=String(e&&e.message||e); toast(/HTTP|fetch|Failed|network/i.test(m)?'No se pudo guardar. Revisá la conexión y probá de nuevo.':m); return null; }
+  finally{ ocupado=false; overlay(null); }
+}
+function aBase64(blob){ return new Promise((ok,ko)=>{ const r=new FileReader(); r.onload=()=>ok(String(r.result).split(',')[1]); r.onerror=ko; r.readAsDataURL(blob); }); }
+async function achicarFoto(file){
+  const img=await abrirImagen(file); const c=lienzo(img,1024,false);
+  return await new Promise(ok=>c.toBlob(b=>ok(b||file),'image/jpeg',.82));
+}
+
+/* ============ Vistas ============ */
+const cabecera=(der='')=>`<div class="top"><button class="round" data-act="back" aria-label="Volver">${ico('back')}</button>${der}</div>`;
+const scanLabel=(intent,cls,html)=>`<button type="button" class="${cls}" data-scan='${esc(JSON.stringify(intent))}'>${html}</button>`;
+function stepper(id,val,max){ return `<div class="step" role="group" aria-label="Cantidad"><button type="button" data-step="${id}" data-d="-1" aria-label="Una menos">−</button><input id="${id}" inputmode="numeric" pattern="[0-9]*" value="${esc(val)}" aria-label="Cantidad" ${max?`data-max="${max}"`:''}><button type="button" class="p" data-step="${id}" data-d="1" aria-label="Una más">+</button></div>`; }
+function selectorCaja(campo,valor,{excepto,oscuro}={}){
+  const cs=cajasOrden().filter(c=>c.id!==excepto);
+  return `<div class="f"><label for="${campo}" class="${oscuro?'sr':''}">Caja</label>
+  <select class="in${oscuro?'':''}" id="${campo}" data-f="${campo}"><option value="">Elegí la caja…</option>${cs.map(c=>`<option value="${esc(c.id)}" ${c.id===valor?'selected':''}>${esc(c.nombre)}${c.lugar?' · '+esc(c.lugar):''}</option>`).join('')}</select></div>
+  ${scanLabel({tipo:'destino',campo},'btn acc',ico('scan',18)+'Escanear el QR de la caja')}`;
+}
+function filaProd(s,{blanco,mostrarCaja}={}){
+  const p=S.productos.get(s.codigo)||{}; const foto=p.foto?`<img src="${fotoUrl(p.foto)}" alt="" loading="lazy">`:ico('prod',22,'stroke:#6f6d6d;stroke-width:2');
+  const sub=mostrarCaja?`${esc(S.cajas.get(s.caja)?.lugar||'')}${S.cajas.get(s.caja)?.lugar?' · ':''}<b style="color:#8c4e3a">${esc(cajaCorta(s.caja))}</b>`:esc(p.marca?`${p.marca} · ${s.codigo}`:s.codigo);
+  return `<button class="item${blanco?' white':''}" data-go="producto" data-codigo="${esc(s.codigo)}"><span class="ic" style="${blanco?'background:#e8e8e8':''}">${foto}</span><span class="tx"><b>${esc(p.nombre||s.codigo)}</b><span>${sub}</span></span><span class="pill-n">${s.cant}</span></button>`;
+}
+
+const VIEWS={
+/* ---------- Inicio ---------- */
+inicio:{ html(){
+  const cs=cajasOrden(); const prods=new Set([...S.stock.values()].filter(s=>s.cant>0).map(s=>s.codigo));
+  const unid=[...S.stock.values()].reduce((a,s)=>a+(s.cant>0?s.cant:0),0);
+  const movs=S.movs.slice(0,12);
+  return `<p class="kicker">Micropack · Diseño</p><h1>Muestras</h1><p class="sub">${miNombre?`Hola, ${esc(miNombre)}. `:''}Qué tenemos y dónde está.</p>
+  ${miNombre?'':`<div class="card" style="background:#f6ece8"><div class="f"><label for="minombre">¿Quién sos?</label><input class="in" id="minombre" data-f="minombre" placeholder="Tu nombre" autocomplete="given-name" value="${esc(V.f.minombre||'')}"></div><button class="btn pri" data-act="guardarNombre">Listo</button><p class="help" style="margin:0">Queda registrado en cada movimiento que cargues.</p></div>`}
+  ${scanLabel({tipo:'abrir'},'scan',`<span class="shape">${shape(GALLETA,64,'#a35e47')}<svg class="ico" width="28" height="28" viewBox="0 0 24 24" style="left:18px;top:18px;stroke:#fff"><path d="${I.scan}"/></svg></span><span><b>Escanear</b><span class="s">QR de una caja o código de un producto</span></span>`)}
+  <button class="searchlink" data-go="buscar">${ico('search',20,'stroke:#000')}<span>¿Tenemos…? Buscá producto, marca o caja</span></button>
+  <div class="stats"><div class="stat"><b>${cs.length}</b><span>Cajas</span></div><div class="stat"><b>${prods.size}</b><span>Productos</span></div><div class="stat"><b>${unid}</b><span>Unidades</span></div></div>
+  <div class="between" style="margin-top:26px"><h2 style="margin:0">Cajas y estantes</h2><button class="link acc" data-go="nuevaCaja" style="padding:8px 0">+ Nueva caja</button></div>
+  ${cs.length?`<div class="list">${cs.map(c=>{ const n=new Set(stockEn(c.id).map(s=>s.codigo)).size; return `<button class="item" data-go="caja" data-id="${esc(c.id)}"><span class="ic">${ico('box',22,'stroke:#000;stroke-width:2')}</span><span class="tx"><b>${esc(c.nombre)}</b><span>${esc(c.lugar||'Sin lugar')}</span></span><span class="n"><b>${n}</b><span>${n===1?'producto':'productos'}</span></span></button>`; }).join('')}</div>`
+   :`<div class="empty"><b>Todavía no hay cajas</b><p>Creá la primera, imprimí su etiqueta con QR y pegala en la caja o el estante. Después escaneás los productos que guardás adentro.</p><button class="btn pri big" data-go="nuevaCaja">${ico('plus',20)}Crear la primera caja</button></div>`}
+  ${movs.length?`<h2>Últimos movimientos</h2><ol class="feed">${movs.map(textoMov).join('')}</ol>`:''}`;
+}},
+
+/* ---------- Cámara en vivo ---------- */
+camara:{ html(){
+  const t={destino:'Escaneá el QR de la caja',guardarEn:'Escaneá el producto que guardás en '+esc(cajaNom(scanIntent.caja))}[scanIntent.tipo]||'Escaneá';
+  return `${cabecera(`<span class="tag">Cámara</span>`)}<h1 class="md">${t}</h1>
+  <div class="cam" id="camBox"><video id="video" playsinline muted autoplay></video><div class="marco"><i></i><i></i><i></i><i></i></div><div class="linea"></div><p class="msg" id="camMsg">Abriendo la cámara…</p></div>
+  <div class="btns"><label for="cam" class="btn">${ico('cam',18)}Sacar foto</label><button class="btn" data-act="aMano">Escribir código</button></div>`;
+}, enter(){ iniciarCamara(); }},
+
+/* ---------- Escanear (manual o si falló la foto) ---------- */
+escanear:{ html(){
+  return `${cabecera()}<h1 class="md">${V.p.fallo?'No pude leer el código':'Escribir el código'}</h1>
+  <p class="sub">${V.p.fallo?'Probá de nuevo más cerca, con buena luz y el código derecho. O escribí los números que están abajo de las barras.':'Escribí los números del código de barras, o el nombre de la caja.'}</p>
+  <div class="card"><div class="f"><label for="manual">Código o caja</label><input class="in" id="manual" data-f="manual" inputmode="text" autocomplete="off" placeholder="7791293022510 o HH GLOBAL - E1" value="${esc(V.f.manual||'')}"></div>
+  <button class="btn pri" data-act="manual">Buscar este código</button></div>
+  <div class="btns"><label for="cam" class="btn acc">${ico('cam',18)}Sacar otra foto</label><label for="gal" class="btn">Elegir de la galería</label></div>
+  <div class="empty" style="margin-top:14px"><b style="font-size:18px">¿No tiene código?</b><p>Cargalo igual: la app le asigna un código interno y le podés imprimir una etiqueta.</p><button class="btn pri big" style="margin-top:14px" data-act="sinCodigo">Cargar sin código</button></div>`;
+}},
+
+/* ---------- Buscar ---------- */
+buscar:{ html(){
+  return `${cabecera(`<label for="q" class="sr">Buscar muestra</label><input class="in onfill" id="q" data-f="q" type="search" autocomplete="off" placeholder="¿Qué buscás?" value="${esc(V.f.q||'')}" style="flex:1;font-weight:700">`)}<div id="res">${resultados()}</div>`;
+}, enter(){ setTimeout(()=>{ const q=$('#q'); q&&q.focus(); },60); }},
+
+/* ---------- Caja ---------- */
+caja:{ html(){
+  const c=S.cajas.get(V.p.id); if(!c) return `${cabecera()}<div class="empty"><b>Esta caja ya no existe</b></div>`;
+  const items=stockEn(V.p.id); const unid=items.reduce((a,s)=>a+s.cant,0);
+  const grupos={}; items.forEach(s=>{ const p=S.productos.get(s.codigo)||{}; const k=[p.cliente,p.proyecto].filter(Boolean).join(' › ')||'Sin proyecto'; (grupos[k]=grupos[k]||[]).push(s); });
+  const ult=Math.max(0,...items.map(s=>s.at||0));
+  return `${cabecera(`<span class="tag">Caja</span>`)}<p class="kicker">${esc(c.lugar||'Sin lugar')}</p><h1 class="md">${esc(c.nombre)}</h1>
+  <div class="dark"><div class="stats3"><div><b>${new Set(items.map(s=>s.codigo)).size}</b><span>productos</span></div><div><b>${unid}</b><span>unidades</span></div><div><b style="font-size:20px;line-height:1.7">${ult?esc(cuando(ult)):'—'}</b><span>último cambio</span></div></div></div>
+  ${puedeEscribir?`<div class="btns">${scanLabel({tipo:'guardarEn',caja:V.p.id},'btn pri',ico('plus',20)+'Guardar acá')}<button class="btn" data-go="etiqueta" data-id="${esc(V.p.id)}">${ico('tag',20)}Etiqueta</button></div>
+  <p class="help">“Guardar acá” abre la cámara: sacale foto al código del producto que metés en esta caja.</p>`:''}
+  <h2>Qué hay adentro</h2>
+  ${items.length?Object.entries(grupos).sort().map(([k,arr])=>`<div class="group"><div class="between"><b style="font-size:15px">${esc(k)}</b><span style="font-size:12.5px;font-weight:700;color:#8c4e3a">${arr.reduce((a,s)=>a+s.cant,0)} u.</span></div><div class="list">${arr.sort((a,b)=>prodNom(a.codigo).localeCompare(prodNom(b.codigo),'es')).map(s=>filaProd(s,{blanco:true})).join('')}</div></div>`).join('')
+   :`<div class="empty"><b>Está vacía</b><p>Tocá “Guardar acá” y escaneá los productos que metas.</p></div>`}
+  ${puedeEscribir?`<div style="display:flex;gap:16px;flex-wrap:wrap;margin-top:8px"><button class="link" data-go="nuevaCaja" data-id="${esc(V.p.id)}">Cambiar nombre o lugar</button><button class="link" data-act="escribirEn">Cargar sin escanear</button></div>`:''}`;
+}},
+
+/* ---------- Producto ---------- */
+producto:{ html(){
+  const c=V.p.codigo, p=S.productos.get(c); if(!p) return `${cabecera()}<div class="empty"><b>No encontré ese producto</b></div>`;
+  const st=stockDe(c).sort((a,b)=>b.cant-a.cant), tot=st.reduce((a,s)=>a+s.cant,0);
+  const med=[['Alto',p.alto,'mm'],['Ancho',p.ancho,'mm'],['Profundidad',p.prof,'mm'],['Peso',p.peso,'g']].filter(m=>m[1]);
+  const hist=V.f.hist;
+  return `${cabecera(`<span class="tag">Producto</span>`)}
+  <div class="photo">${p.foto?`<img src="${fotoUrl(p.foto)}" alt="Foto de ${esc(p.nombre)}">`:shape(GALLETA,150,'#e8e8e8')}</div>
+  <p class="kicker" style="margin-top:18px;font-variant-numeric:tabular-nums;letter-spacing:.03em">${c.startsWith('MU-')?'Código interno':'Código'} ${esc(c)}</p>
+  <h1 class="md">${esc(p.nombre)}</h1>
+  <p class="sub">${esc([p.cliente,p.marca,p.proyecto].filter(Boolean).join(' › ')||'Sin cliente ni proyecto')}</p>
+  <div class="dark"><div class="between"><b style="font-size:17px">Dónde está</b><span style="font-size:13px;color:#c9c7c7"><b style="color:#fff;font-size:15px">${tot}</b> ${tot===1?'unidad':'unidades'}</span></div>
+  ${st.length?`<div class="list">${st.map((s,i)=>`<button class="item" data-go="caja" data-id="${esc(s.caja)}"><span style="position:relative;flex:none;width:36px;height:36px">${shape(i===0?GALLETA:SOL,36,'#a35e47')}<svg class="ico" width="16" height="16" viewBox="0 0 24 24" style="position:absolute;left:10px;top:10px;stroke:#fff;stroke-width:2.4"><path d="${I.box}"/></svg></span><span class="tx"><b>${esc(cajaNom(s.caja))}</b><span>${esc(S.cajas.get(s.caja)?.lugar||'')}</span></span><b style="font-size:20px;font-weight:900;font-stretch:125%">${s.cant}</b></button>`).join('')}</div>`
+   :`<p style="margin:10px 0 0;color:#c9c7c7">Ya no hay: se devolvió o se usó.</p>`}</div>
+  ${puedeEscribir?`<div class="btns">${st.length?`<button class="btn pri" data-go="mover" data-codigo="${esc(c)}">Mover o sacar</button>`:''}<button class="btn" data-go="agregar" data-codigo="${esc(c)}">${ico('plus',20)}Sumar</button></div>`:''}
+  <div class="card" style="gap:0"><div class="between"><b style="font-size:17px">Medidas del producto</b>${puedeEscribir?`<button class="link acc" style="padding:4px 0" data-go="ingreso" data-codigo="${esc(c)}" data-editar="1">Editar</button>`:''}</div>
+  ${med.length?`<dl class="kv">${med.map(m=>`<div><dt>${m[0]}</dt><dd>${esc(m[1])} ${m[2]}</dd></div>`).join('')}</dl>`:`<p class="help" style="margin:8px 0 0">Sin medidas cargadas. Sirven para diseñar el exhibidor sin volver a medir.</p>`}</div>
+  ${c.startsWith('MU-')?`<button class="btn big" data-go="etiqueta" data-codigo="${esc(c)}">${ico('tag',20)}Etiqueta del producto</button>`:''}
+  <h2>Historial</h2>
+  ${hist?(hist.length?`<ol class="feed">${hist.map(textoMov).join('')}</ol>`:`<p class="help">Sin movimientos.</p>`):`<p class="help">Cargando…</p>`}`;
+}, enter(){ cargarHist(); }},
+
+/* ---------- Producto nuevo / editar ---------- */
+ingreso:{ html(){
+  const ed=!!V.p.editar, c=V.p.codigo, f=V.f, cls=clientes();
+  if(!f._init){ const p=S.productos.get(c)||{}; Object.assign(f,{_init:1,nombre:p.nombre||'',marca:p.marca||'',cliente:p.cliente||(V.p.caja&&S.cajas.get(V.p.caja)?.nombre?.split(' - ')[0])||'',proyecto:p.proyecto||'',alto:p.alto||'',ancho:p.ancho||'',prof:p.prof||'',peso:p.peso||'',foto:p.foto||'',cant:f.cant||1,destino:V.p.caja||''}); }
+  return `${cabecera(`<span class="kicker" style="font-variant-numeric:tabular-nums">${c?esc((c.startsWith('MU-')?'Interno ':'Código ')+c):'Sin código'}</span>`)}
+  <h1 class="md">${ed?'Editar producto':'Producto nuevo'}</h1>
+  <p class="sub">${ed?'Corregí lo que haga falta.':c?'Este código todavía no está cargado. Completá lo básico y guardalo en una caja.':'Le vamos a asignar un código interno para que tenga su etiqueta.'}</p>
+  ${!ed&&V.p.codigo&&!V.p.codigo.startsWith('MU-')?cardCat(f):''}
+  <div class="card">
+   <div class="f"><label for="nombre">Producto</label><input class="in" id="nombre" data-f="nombre" placeholder="Ej.: Sedal Shampoo Ceramidas 340 ml" value="${esc(f.nombre)}" autocomplete="off"></div>
+   <div class="grid2"><div class="f"><label for="marca">Marca</label><input class="in" id="marca" data-f="marca" placeholder="Sedal" value="${esc(f.marca)}" autocomplete="off"></div>
+   <div class="f"><label for="proyecto">Proyecto <span class="opt">· opc.</span></label><input class="in" id="proyecto" data-f="proyecto" placeholder="BP-0021" value="${esc(f.proyecto)}" autocomplete="off"></div></div>
+   <div class="f"><span class="lbl" id="cli-l">Cliente</span>${cls.length?`<div class="chips" role="group" aria-labelledby="cli-l">${cls.map(x=>`<button type="button" class="chip" data-cli="${esc(x)}" aria-pressed="${norm(x)===norm(f.cliente)}">${esc(x)}</button>`).join('')}</div>`:''}
+   <input class="in" id="cliente" data-f="cliente" aria-labelledby="cli-l" placeholder="${cls.length?'u otro…':'Ej.: HH Global'}" value="${esc(f.cliente)}" autocomplete="off"></div>
+   ${ed?'':`<div class="between" style="align-items:center"><span class="lbl">Cantidad</span>${stepper('cant',f.cant)}</div>`}
+  </div>
+  ${ed?'':`<div class="dark"><span class="lbl">Dónde la guardás</span><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${selectorCaja('destino',f.destino,{oscuro:true})}</div></div>`}
+  <div class="card"><span class="lbl">Foto y medidas <span class="opt">· opcional</span></span>
+   <button type="button" class="drop" data-act="foto">${f.foto?`<img src="${fotoUrl(f.foto)}" alt="Foto cargada">`:f._subiendo?'Subiendo foto…':ico('cam',22)+'Sacar foto'}</button>
+   <div class="grid3">${[['alto','Alto'],['ancho','Ancho'],['prof','Prof.']].map(([k,l])=>`<div class="f"><label for="${k}" style="font-size:12.5px;color:#464646">${l} (mm)</label><input class="in" id="${k}" data-f="${k}" inputmode="decimal" value="${esc(f[k])}"></div>`).join('')}</div>
+   <div class="f" style="max-width:50%"><label for="peso" style="font-size:12.5px;color:#464646">Peso (g)</label><input class="in" id="peso" data-f="peso" inputmode="decimal" value="${esc(f.peso)}"></div>
+  </div>
+  <button class="btn pri big" data-act="guardarIngreso">${ed?'Guardar cambios':'Guardar'+(f.destino?` ${esc(f.cant)} en ${esc(cajaNom(f.destino))}`:'')}</button>`;
+}, enter(){ if(!V.p.editar&&V.p.codigo&&!V.p.codigo.startsWith('MU-')) completarDesdeCatalogo(); }},
+
+/* ---------- Sumar unidades de un producto ya cargado ---------- */
+agregar:{ html(){
+  const c=V.p.codigo, f=V.f; if(!f._init){ f._init=1; f.cant=1; f.destino=V.p.caja||stockDe(c)[0]?.caja||''; }
+  return `${cabecera()}<p class="kicker">Ya está cargado · ${totalDe(c)} en total</p><h1 class="md">${esc(prodNom(c))}</h1>
+  <div class="card"><div class="between" style="align-items:center"><span class="lbl">¿Cuántas guardás?</span>${stepper('cant',f.cant)}</div></div>
+  <div class="dark"><span class="lbl">En qué caja</span><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${selectorCaja('destino',f.destino,{oscuro:true})}</div></div>
+  <button class="btn pri big" data-act="guardarAgregar">Guardar ${esc(f.cant)}${f.destino?' en '+esc(cajaNom(f.destino)):''}</button>
+  <button class="link" data-go="producto" data-codigo="${esc(c)}" style="display:block;margin:6px auto 0">Ver el producto</button>`;
+}},
+
+/* ---------- Mover / devolver / descartar ---------- */
+mover:{ html(){
+  const c=V.p.codigo, st=stockDe(c), f=V.f;
+  if(!f._init){ f._init=1; f.accion='mover'; f.desde=V.p.desde||st.sort((a,b)=>b.cant-a.cant)[0]?.caja||''; f.cant=1; f.destino=''; f.nota=''; }
+  const max=st.find(s=>s.caja===f.desde)?.cant||0;
+  const A=[['mover','Mover a otra caja','arrow'],['devolver','Devolver al cliente','undo'],['descartar','Descartar o usada','trash']];
+  const verbo={mover:'Mover',devolver:'Devolver',descartar:'Descartar'}[f.accion];
+  return `${cabecera()}<p class="kicker">${esc(prodNom(c))}</p><h1 class="md">¿Qué hacés?</h1>
+  <div class="acts" role="radiogroup" aria-label="Qué hacés" style="margin-top:16px">${A.map(([k,l,ic])=>`<button type="button" class="act" role="radio" aria-checked="${f.accion===k}" data-accion="${k}">${ico(ic,22)}${l}</button>`).join('')}</div>
+  <div class="card">
+   <div class="f"><label for="desde">Desde</label><select class="in" id="desde" data-f="desde">${st.map(s=>`<option value="${esc(s.caja)}" ${s.caja===f.desde?'selected':''}>${esc(cajaNom(s.caja))} · hay ${s.cant}</option>`).join('')}</select></div>
+   <div class="between" style="align-items:center"><span class="lbl">Cuántas <span class="opt">· máx. ${max}</span></span>${stepper('cant',f.cant,max)}</div>
+  </div>
+  ${f.accion==='mover'?`<div class="dark"><span class="lbl">A qué caja</span><div style="display:flex;flex-direction:column;gap:10px;margin-top:10px">${selectorCaja('destino',f.destino,{excepto:f.desde,oscuro:true})}</div></div>`
+   :`<div class="card"><div class="f"><label for="nota">Nota <span class="opt">· opcional</span></label><input class="in" id="nota" data-f="nota" placeholder="Ej.: la retiró el vendedor" value="${esc(f.nota)}"></div></div>`}
+  <button class="btn pri big" data-act="guardarMover">${verbo} ${esc(f.cant)} ${Number(f.cant)===1?'unidad':'unidades'}</button>`;
+}},
+
+/* ---------- Nueva caja / editar ---------- */
+nuevaCaja:{ html(){
+  const ed=V.p.id&&S.cajas.get(V.p.id), f=V.f, ls=lugares();
+  if(!f._init){ f._init=1; f.nombre=ed?.nombre||''; f.lugar=ed?.lugar||''; }
+  return `${cabecera()}<h1 class="md">${ed?'Editar caja':'Nueva caja'}</h1><p class="sub">El nombre va grande en la etiqueta. Usá “CLIENTE - E1”, “CLIENTE - E2”…</p>
+  <div class="card"><div class="f"><label for="nombre">Nombre</label><input class="in" id="nombre" data-f="nombre" placeholder="HH GLOBAL - E5" value="${esc(f.nombre)}" autocomplete="off" style="text-transform:uppercase;font-weight:800"></div>
+  <div class="f"><label for="lugar">Dónde está</label><input class="in" id="lugar" data-f="lugar" list="lugares" placeholder="Estudio · Estante 3" value="${esc(f.lugar)}" autocomplete="off"><datalist id="lugares">${ls.map(l=>`<option value="${esc(l)}">`).join('')}</datalist></div></div>
+  <button class="btn pri big" data-act="guardarCaja">${ed?'Guardar cambios':'Crear y ver la etiqueta'}</button>`;
+}},
+
+/* ---------- Etiqueta ---------- */
+etiqueta:{ html(){
+  const caja=V.p.id&&S.cajas.get(V.p.id);
+  const t=caja?{titulo:caja.nombre,sub:caja.lugar||''}:{titulo:prodNom(V.p.codigo),sub:V.p.codigo};
+  return `${cabecera()}<h1 class="md">Etiqueta</h1><p class="sub">${caja?'Imprimila y pegala en la caja o el estante. Al escanearla se ve lo que hay adentro.':'Para un producto sin código de barras.'}</p>
+  <div class="label-prev"><img id="lbl" alt="Etiqueta de ${esc(t.titulo)}"></div>
+  <button class="btn pri big" data-act="bajarEtiqueta">Descargar imagen para imprimir</button>
+  <p class="help" id="lblHelp">Tamaño sugerido: 10 × 6,5 cm. Si no se descarga, mantené apretada la imagen para guardarla.</p>`;
+}, enter(){ dibujarEtiqueta(); if(document.fonts&&document.fonts.ready) document.fonts.ready.then(()=>{ if(V.view==='etiqueta') dibujarEtiqueta(); }); }},
+};
+
+function textoMov(m){
+  const n=`${m.cant} × ${esc(m.nombre||prodNom(m.codigo))}`;
+  const txt={ingreso:`<b>Ingresó</b> ${n} a ${esc(cajaNom(m.hacia))}`,agregar:`<b>Sumó</b> ${n} a ${esc(cajaNom(m.hacia))}`,
+    mover:`<b>Movió</b> ${n} de ${esc(cajaNom(m.desde))} a ${esc(cajaNom(m.hacia))}`,devolver:`<b>Devolvió</b> ${n} al cliente`,descartar:`<b>Descartó</b> ${n}`}[m.tipo]||esc(m.tipo);
+  const col={ingreso:'#a35e47',agregar:'#a35e47',mover:'#000',devolver:'#9c9a9a',descartar:'#9c9a9a'}[m.tipo]||'#000';
+  const quien=m.por||'';
+  return `<li><span class="dot" style="background:${col}"></span><span><span style="font-size:14px">${txt}</span>${m.nota?`<span class="m" style="display:block">“${esc(m.nota)}”</span>`:''}<span class="m" style="display:block">${quien?esc(quien)+' · ':''}${esc(cuando(m.at))}</span></span></li>`;
+}
+
+/* ============ Catálogo (Precios Claros + Open Food Facts) ============ */
+const catCache={};
+async function buscarProductoExterno(codigo){
+  if(!/^\d{8,14}$/.test(codigo)) return null;
+  const sh=codigo.slice(-2);
+  try{
+    if(!catCache[sh]) catCache[sh]=fetch(CATALOGO_URL+sh+'.json').then(r=>r.ok?r.json():{}).catch(()=>({}));
+    const t=await catCache[sh]; const x=t&&t[codigo];
+    if(x) return {nombre:x[0], marca:x[1]||'', fuente:'Precios Claros'};
+  }catch(e){}
+  for(const [base,fuente] of [['https://world.openfoodfacts.org','Open Food Facts'],['https://world.openbeautyfacts.org','Open Beauty Facts']]){
+    try{
+      const r=await fetch(`${base}/api/v2/product/${codigo}.json?fields=product_name,product_name_es,brands,quantity`); if(!r.ok) continue;
+      const j=await r.json(); const p=j&&j.product;
+      if(j&&j.status===1&&p){ const n=String(p.product_name_es||p.product_name||'').trim();
+        if(n){ const q=String(p.quantity||'').trim(); return {nombre:q&&!norm(n).includes(norm(q))?n+' '+q:n, marca:String(p.brands||'').split(',')[0].trim(), fuente}; } }
+    }catch(e){}
+  }
+  return null;
+}
+async function completarDesdeCatalogo(){
+  const codigo=V.p.codigo; const enIngreso=()=>V.view==='ingreso'&&V.p.codigo===codigo;
+  V.f._cat='buscando'; render();
+  const r=await buscarProductoExterno(codigo);
+  if(!enIngreso()) return;
+  if(r){ if(!V.f.nombre) V.f.nombre=r.nombre; if(!V.f.marca) V.f.marca=r.marca; V.f._cat='ok'; V.f._fuente=r.fuente; }
+  else V.f._cat='no';
+  const y=window.scrollY; render(); window.scrollTo(0,y);
+}
+function cardCat(f){
+  const st=f._cat;
+  const msg= st==='buscando'?`<b style="font-size:15px">Buscando el código…</b><span class="help" style="margin:2px 0 0">En el catálogo de Precios Claros y en Open Food Facts.</span>`
+   : st==='ok'?`<b style="font-size:15px">Lo encontré en ${esc(f._fuente)}</b><span class="help" style="margin:2px 0 0">Revisá el nombre y la marca. El cliente lo elegís vos.</span>`
+   : `<b style="font-size:15px">No está en los catálogos</b><span class="help" style="margin:2px 0 0">Completalo a mano. La próxima vez que alguien lo escanee, ya va a estar.</span>`;
+  return `<div class="card" style="background:#f6ece8;gap:12px"><div class="row" style="align-items:flex-start"><span style="position:relative;flex:none;width:44px;height:44px">${shape(st==='buscando'?SOL:GALLETA,44,'#a35e47')}<svg class="ico" width="20" height="20" viewBox="0 0 24 24" style="position:absolute;left:12px;top:12px;stroke:#fff"><path d="${st==='ok'?I.check:I.search}"/></svg></span><span style="display:flex;flex-direction:column">${msg}</span></div></div>`;
+}
+
+/* ============ Búsqueda ============ */
+function resultados(){
+  const q=V.f.q||''; const ws=norm(q).split(/\s+/).filter(Boolean);
+  if(!ws.length) return `<p class="help" style="margin-top:6px">Escribí la marca, el producto, el cliente o la caja. Ej.: “shampoo sedal”.</p>`;
+  const coincide=(p,cod)=>{ const t=norm([p.marca,p.nombre,p.cliente,p.proyecto,cod].join(' ')); return ws.every(w=>t.includes(w)); };
+  const prods=[...S.productos.entries()].filter(([cod,p])=>coincide(p,cod)).map(([cod])=>cod);
+  const cajas=cajasOrden().filter(c=>ws.every(w=>norm(c.nombre+' '+(c.lugar||'')).includes(w)));
+  const filas=prods.flatMap(cod=>stockDe(cod)); const conStock=new Set(filas.map(s=>s.codigo));
+  const sinStock=prods.filter(c=>!conStock.has(c));
+  let h='';
+  if(filas.length){
+    const porCaja={}; filas.forEach(s=>{ porCaja[s.caja]=(porCaja[s.caja]||0)+s.cant; });
+    const ds=Object.entries(porCaja).sort((a,b)=>b[1]-a[1]); const tot=filas.reduce((a,s)=>a+s.cant,0);
+    const ls=[...new Set(ds.map(([c])=>S.cajas.get(c)?.lugar).filter(Boolean))];
+    const lugar0=ds.length===1?(S.cajas.get(ds[0][0])?.lugar||'').split('·')[0].trim():''; const cc=ds.length===1?cajaCorta(ds[0][0]):'';
+    const en=ds.length===1?`Está ${lugar0?'en '+esc(lugar0)+', ':''}${cc.startsWith('Caja ')?'en la caja '+esc(cc.slice(5)):'en '+esc(cc)}.`:`Está repartido en ${ds.length} cajas.`;
+    h+=`<div class="dark" style="margin-top:4px"><div class="yes"><span style="position:relative;flex:none;width:52px;height:52px">${shape(SOL,52,'#a35e47')}<svg class="ico" width="24" height="24" viewBox="0 0 24 24" style="position:absolute;left:14px;top:14px;stroke:#fff;stroke-width:2.6"><path d="${I.check}"/></svg></span><b>Sí, hay.</b></div>
+    <p style="margin:14px 0 0;font-size:17px">${plural(conStock.size,'producto','productos')}, ${plural(tot,'unidad','unidades')}. ${en}</p>
+    <div class="list">${ds.map(([c,u])=>`<button class="item" data-go="caja" data-id="${esc(c)}"><span class="ic" style="background:transparent">${ico('box',24,'stroke:#c27b63')}</span><span class="tx"><span>${esc(S.cajas.get(c)?.lugar||'')}</span><b style="font-size:17px">${esc(cajaNom(c))}</b></span><span class="n"><b style="font-size:20px;font-weight:900;font-stretch:125%">${u}</b><span>unid.</span></span></button>`).join('')}</div></div>
+    <h2>Lo que encontré</h2><div class="list">${filas.sort((a,b)=>prodNom(a.codigo).localeCompare(prodNom(b.codigo),'es')).map(s=>filaProd(s,{mostrarCaja:true})).join('')}</div>`;
+    const marcas=[...new Set([...conStock].map(c=>S.productos.get(c)?.marca).filter(Boolean))];
+    if(marcas.length===1){ const otros=[...S.productos.keys()].filter(c=>!prods.includes(c)&&norm(S.productos.get(c).marca)===norm(marcas[0])).flatMap(stockDe);
+      if(otros.length) h+=`<h2>Otros de ${esc(marcas[0])}</h2><div class="list">${otros.map(s=>filaProd(s,{mostrarCaja:true,blanco:true})).join('')}</div>`; }
+  } else if(!cajas.length){
+    h+=`<div class="empty" style="margin-top:4px"><b style="font-size:40px;line-height:1">No hay.</b><p>${sinStock.length?'Lo tuvimos, pero ya se devolvió o se usó.':`No encontré muestras de “${esc(q)}”. Probá con la marca sola o escaneá el código.`}</p>
+    ${scanLabel({tipo:'abrir'},'btn pri big',ico('scan',20)+'Escanear el código')}</div>`;
+  }
+  if(sinStock.length&&filas.length) h+=`<h2>Ya no hay</h2><div class="list">${sinStock.map(c=>`<button class="item white" style="border:2px solid #f2f2f2" data-go="producto" data-codigo="${esc(c)}"><span class="tx"><b>${esc(prodNom(c))}</b><span>devuelto o usado</span></span></button>`).join('')}</div>`;
+  if(sinStock.length&&!filas.length) h+=`<div class="list">${sinStock.map(c=>`<button class="item" data-go="producto" data-codigo="${esc(c)}"><span class="tx"><b>${esc(prodNom(c))}</b><span>Ver historial</span></span></button>`).join('')}</div>`;
+  if(cajas.length) h+=`<h2>Cajas</h2><div class="list">${cajas.map(c=>`<button class="item" data-go="caja" data-id="${esc(c.id)}"><span class="ic">${ico('box',22,'stroke:#000;stroke-width:2')}</span><span class="tx"><b>${esc(c.nombre)}</b><span>${esc(c.lugar||'')}</span></span></button>`).join('')}</div>`;
+  return h;
+}
+
+/* ============ Etiqueta (canvas) ============ */
+function dibujarEtiqueta(){
+  const caja=V.p.id&&S.cajas.get(V.p.id); const data=caja?QR_CAJA+V.p.id:QR_PROD+V.p.codigo;
+  const W=1200,H=780,c=document.createElement('canvas'); c.width=W; c.height=H; const g=c.getContext('2d');
+  g.fillStyle='#fff'; g.fillRect(0,0,W,H); g.strokeStyle='#000'; g.lineWidth=6; g.strokeRect(3,3,W-6,H-6);
+  try{ const qr=qrcode(0,'M'); qr.addData(data); qr.make(); const n=qr.getModuleCount(), q=4, size=560, cell=Math.floor(size/(n+q*2)), off=60+Math.floor((size-cell*(n+q*2))/2)+cell*q;
+    g.fillStyle='#000'; for(let r=0;r<n;r++) for(let k=0;k<n;k++) if(qr.isDark(r,k)) g.fillRect(off+k*cell,off+r*cell+50,cell,cell); }catch(e){}
+  const x=680, maxW=W-x-56; const fit=(t,w,start,min,weight)=>{ let s=start; do{ g.font=`${weight} ${s}px Archivo, Arial, sans-serif`; if(g.measureText(t).width<=w) break; s-=4; }while(s>min); return s; };
+  g.fillStyle='#8c4e3a'; g.font='800 30px Archivo, Arial, sans-serif'; g.fillText('MUESTRAS',x,120);
+  g.fillStyle='#000';
+  if(caja){ const nom=caja.nombre; const parts=nom.includes(' - ')?[nom.slice(0,nom.lastIndexOf(' - ')),nom.split(' - ').pop()]:[nom,''];
+    const s1=fit(parts[0],maxW,90,30,900); g.font=`900 ${s1}px Archivo, Arial, sans-serif`; g.fillText(parts[0],x,120+s1+20);
+    if(parts[1]){ const s2=fit(parts[1],maxW,260,60,900); g.font=`900 ${s2}px Archivo, Arial, sans-serif`; g.fillText(parts[1],x-6,120+s1+20+s2*0.9+10); }
+    g.fillStyle='#464646'; g.font='600 34px Archivo, Arial, sans-serif'; g.fillText(caja.lugar||'',x,H-110,maxW);
+  } else { const nom=prodNom(V.p.codigo); const words=nom.split(' '); let lines=[''], s=56; g.font=`900 ${s}px Archivo, Arial, sans-serif`;
+    words.forEach(w=>{ const t=(lines[lines.length-1]+' '+w).trim(); if(g.measureText(t).width>maxW&&lines[lines.length-1]) lines.push(w); else lines[lines.length-1]=t; });
+    lines.slice(0,5).forEach((l,i)=>g.fillText(l,x,200+i*66));
+    g.fillStyle='#464646'; g.font='700 40px Archivo, Arial, sans-serif'; g.fillText(V.p.codigo,x,H-110); }
+  g.fillStyle='#6f6d6d'; g.font='500 26px Archivo, Arial, sans-serif'; g.fillText('Escaneá con la app Muestras',x,H-60,maxW);
+  const url=c.toDataURL('image/png'); const img=$('#lbl'); if(img) img.src=url; V.f._png=c;
+}
+async function bajarEtiqueta(){
+  const c=V.f._png; if(!c) return; const caja=V.p.id&&S.cajas.get(V.p.id);
+  const nombre='etiqueta-'+(caja?caja.nombre:V.p.codigo).replace(/[^A-Za-z0-9]+/g,'-').toLowerCase()+'.png';
+  try{
+    const blob=await new Promise(ok=>c.toBlob(ok,'image/png')); const file=new File([blob],nombre,{type:'image/png'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){ await navigator.share({files:[file],title:'Etiqueta'}); return; }
+    const a=document.createElement('a'); a.href=URL.createObjectURL(blob); a.download=nombre; document.body.appendChild(a); a.click(); a.remove(); setTimeout(()=>URL.revokeObjectURL(a.href),5000);
+  }catch(e){ if(e&&e.name==='AbortError') return; $('#lblHelp').textContent='No se descargó. Mantené apretada la imagen para guardarla.'; }
+}
+
+/* ============ Historial de un producto ============ */
+async function cargarHist(){
+  const c=V.p.codigo;
+  try{ const arr=await call('historial',c); if(V.view==='producto'&&V.p.codigo===c){ V.f.hist=arr||[]; const y=window.scrollY; render(); window.scrollTo(0,y); } }
+  catch(e){ if(V.view==='producto'&&V.p.codigo===c){ V.f.hist=S.movs.filter(m=>m.codigo===c); render(); } }
+}
+
+/* ============ Guardados ============ */
+const ACCIONES={
+  back, manual(){ const v=(V.f.manual||'').trim(); if(!v){ toast('Escribí un código.'); return; } manejarCodigo(v); },
+  sinCodigo(){ const it=scanIntent; scanIntent={tipo:'abrir'}; salir(); while(V.view==='escanear'||V.view==='camara') V=pila.pop()||{view:'inicio',p:{},f:{}}; go('ingreso',{codigo:'',caja:it.caja||(V.view==='caja'?V.p.id:'')||''}); },
+  escribirEn(){ scanIntent={tipo:'guardarEn',caja:V.p.id}; go('escanear',{}); },
+  foto(){ $('#fotoIn').click(); },
+  aMano(){ go('escanear',{}); },
+  guardarNombre(){ const n=(V.f.minombre||'').trim(); if(!n){ toast('Escribí tu nombre.'); return; } miNombre=n.slice(0,40); lsSet('muestras-nombre',miNombre); render(); },
+  async guardarIngreso(){
+    const f=V.f, ed=!!V.p.editar; const nombre=(f.nombre||'').trim(); if(!nombre){ toast('Escribí el nombre del producto.'); $('#nombre')?.focus(); return; }
+    const cant=Math.max(1,parseInt(f.cant,10)||1); if(!ed&&!f.destino){ toast('Elegí en qué caja la guardás.'); return; }
+    const codigo=V.p.codigo||('MU-'+rid(5));
+    const producto={codigo,nombre,marca:(f.marca||'').trim(),cliente:(f.cliente||'').trim(),proyecto:(f.proyecto||'').trim(),alto:String(f.alto||'').trim(),ancho:String(f.ancho||'').trim(),prof:String(f.prof||'').trim(),peso:String(f.peso||'').trim(),foto:f.foto||''};
+    const d=ed?await escribir('guardarProducto',[producto,miNombre]):await escribir('ingresar',[{producto,nuevo:true,caja:f.destino,cant,por:miNombre}]);
+    if(!d) return;
+    V=pila.pop()||{view:'inicio',p:{},f:{}}; toast(ed?'Cambios guardados':`Guardado: ${cant} en ${cajaNom(f.destino)}`);
+    go('producto',{codigo});
+  },
+  async guardarAgregar(){
+    const f=V.f, c=V.p.codigo, cant=Math.max(1,parseInt(f.cant,10)||1); if(!f.destino){ toast('Elegí la caja.'); return; }
+    const d=await escribir('ingresar',[{codigo:c,caja:f.destino,cant,por:miNombre}]); if(!d) return;
+    toast(`Guardado: ${cant} en ${cajaNom(f.destino)}`); back();
+  },
+  async guardarMover(){
+    const f=V.f, c=V.p.codigo, max=stockDe(c).find(s=>s.caja===f.desde)?.cant||0, cant=Math.min(max,Math.max(1,parseInt(f.cant,10)||1));
+    if(!f.desde||!max){ toast('No hay unidades en esa caja.'); return; }
+    if(f.accion==='mover'&&!f.destino){ toast('Elegí a qué caja va.'); return; }
+    const d=await escribir('mover',[{tipo:f.accion,codigo:c,desde:f.desde,hacia:f.accion==='mover'?f.destino:'',cant,nota:(f.nota||'').trim(),por:miNombre}]); if(!d) return;
+    toast('Listo'); back();
+  },
+  async guardarCaja(){
+    const f=V.f, nombre=(f.nombre||'').trim().toUpperCase().replace(/\s*-\s*/g,' - '); if(!nombre){ toast('Poné un nombre a la caja.'); return; }
+    const repetida=cajasOrden().find(c=>c.id!==V.p.id&&norm(c.nombre)===norm(nombre)); if(repetida){ toast('Ya hay una caja con ese nombre.'); return; }
+    const d=await escribir('guardarCaja',[{id:V.p.id||'',nombre,lugar:(f.lugar||'').trim(),por:miNombre}]); if(!d) return;
+    const editando=!!V.p.id, id=d.id||V.p.id; V=pila.pop()||{view:'inicio',p:{},f:{}};
+    if(editando){ go('caja',{id}); toast('Caja actualizada'); } else go('etiqueta',{id});
+  },
+  bajarEtiqueta,
+};
+
+/* ============ Render y eventos ============ */
+function render(){
+  const v=VIEWS[V.view]||VIEWS.inicio; let banner='';
+  if(conexion==='sin') banner=`<p class="banner err">No me pude conectar con la planilla. Revisá la conexión; reintento solo.</p>`;
+  else if(conexion==='cargando'&&!S.cajas.size) banner=`<p class="banner">Cargando las muestras…</p>`;
+  $('#app').innerHTML=banner+v.html();
+  const nav=$('#nav'); const enInicio=V.view==='inicio';
+  nav.innerHTML=`<button class="${enInicio?'on':''}" data-act="home">${ico('home',20)}Inicio</button>${scanLabel({tipo:'abrir'},'sc',ico('scan',20)+'Escanear')}<button class="${V.view==='buscar'?'on':''}" data-go="buscar">${ico('search',20)}Buscar</button>`;
+  nav.hidden=['ingreso','agregar','mover','nuevaCaja','camara'].includes(V.view);
+}
+document.addEventListener('click',e=>{
+  const sc=e.target.closest('[data-scan]'); if(sc){ e.preventDefault(); try{ scanIntent=JSON.parse(sc.dataset.scan); }catch(_){ scanIntent={tipo:'abrir'}; } go('camara',{}); return; }
+  const intent=e.target.closest('[data-intent]'); if(intent){ try{ scanIntent=JSON.parse(intent.dataset.intent); }catch(_){ scanIntent={tipo:'abrir'}; } return; }
+  const g=e.target.closest('[data-go]'); if(g){ e.preventDefault(); const d=g.dataset; go(d.go,{id:d.id,codigo:d.codigo,editar:d.editar}); return; }
+  const a=e.target.closest('[data-act]'); if(a){ e.preventDefault(); const k=a.dataset.act; if(k==='home') home(); else ACCIONES[k]&&ACCIONES[k](); return; }
+  const st=e.target.closest('[data-step]'); if(st){ const inp=$('#'+st.dataset.step); const max=Number(inp.dataset.max)||Infinity; let n=(parseInt(inp.value,10)||0)+Number(st.dataset.d); n=Math.max(1,Math.min(max,n)); inp.value=n; V.f[st.dataset.step]=n; refrescarBoton(); return; }
+  const cl=e.target.closest('[data-cli]'); if(cl){ V.f.cliente=cl.dataset.cli; render(); return; }
+  const ac=e.target.closest('[data-accion]'); if(ac){ V.f.accion=ac.dataset.accion; render(); return; }
+});
+document.addEventListener('input',e=>{
+  const t=e.target; if(t.id==='cant'){ V.f.cant=t.value; return; }
+  const k=t.dataset&&t.dataset.f; if(!k) return; V.f[k]=t.value;
+  if(k==='q'){ $('#res').innerHTML=resultados(); }
+});
+document.addEventListener('change',e=>{
+  const t=e.target; if(t.id==='cant'){ const max=Number(t.dataset.max)||Infinity; V.f.cant=Math.max(1,Math.min(max,parseInt(t.value,10)||1)); refrescarBoton(); return; }
+  const k=t.dataset&&t.dataset.f; if(t.tagName==='SELECT'&&k){ V.f[k]=t.value; if(k==='desde') V.f.cant=1; render(); }
+});
+document.addEventListener('keydown',e=>{ if(e.key==='Enter'&&e.target.id==='manual'){ e.preventDefault(); ACCIONES.manual(); return; }
+  if(e.key==='Enter'&&e.target.id==='minombre'){ e.preventDefault(); ACCIONES.guardarNombre(); return; }
+  const l=e.target.closest&&e.target.closest('label[data-intent],label[for]'); if(l&&(e.key==='Enter'||e.key===' ')){ e.preventDefault(); l.click(); } });
+function refrescarBoton(){ if(['ingreso','agregar','mover'].includes(V.view)){ const y=window.scrollY; const act=document.activeElement?.id; render(); window.scrollTo(0,y); if(act&&act!=='cant'){ const el=$('#'+act); el&&el.focus(); } } }
+$('#cam').addEventListener('change',alElegirFoto); $('#gal').addEventListener('change',alElegirFoto);
+$('#fotoIn').addEventListener('change',async e=>{
+  const file=e.target.files&&e.target.files[0]; e.target.value=''; if(!file) return;
+  const vista=V; vista.f._subiendo=1; render();
+  try{ const b=await achicarFoto(file); const r=await call('subirFoto',await aBase64(b),'image/jpeg','muestra-'+(vista.p.codigo||'')+'.jpg'); vista.f.foto=r.id; }
+  catch(err){ toast('No se pudo subir la foto.'); }
+  vista.f._subiendo=0; if(V===vista) render();
+});
+
+/* ============ Arranque ============ */
+render();
+cargar();
+setInterval(sondear,20000);
+document.addEventListener('visibilitychange',()=>{ if(!document.hidden) sondear(); });
+setInterval(()=>{ if(conexion==='sin') cargar(); },10000);
+</script>
+</body>
+</html>

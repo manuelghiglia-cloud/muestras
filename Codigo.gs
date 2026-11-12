@@ -1,0 +1,230 @@
+/**
+ * Muestras · backend en Google Apps Script
+ *
+ * Guarda todo en la planilla a la que está vinculado este script:
+ *   Cajas, Productos, Stock y Movimientos (una hoja cada uno).
+ * Las fotos van a una carpeta de Drive ("Muestras · fotos").
+ *
+ * Regla de la casa (igual que Brief POP): la app NUNCA borra filas.
+ * Un producto que se devuelve queda con cantidad 0 en Stock y su
+ * movimiento registrado en Movimientos.
+ *
+ * Primera vez: ejecutá la función configurar() desde el editor.
+ */
+
+const HOJAS = {
+  Cajas:       ['id', 'nombre', 'lugar', 'creado', 'por'],
+  Productos:   ['codigo', 'nombre', 'marca', 'cliente', 'proyecto', 'alto', 'ancho', 'prof', 'peso', 'foto', 'creado', 'actualizado', 'por'],
+  Stock:       ['codigo', 'caja', 'cant', 'at'],
+  Movimientos: ['at', 'tipo', 'codigo', 'nombre', 'desde', 'hacia', 'cant', 'nota', 'por'],
+};
+const MOVS_A_ENVIAR = 400;   // los últimos N movimientos que viajan a la app
+
+/* ───────────── Entradas web ───────────── */
+
+function doGet(e) {
+  const p = (e && e.parameter) || {};
+  if (p.api === 'get') return json_(getData());
+  return HtmlService.createHtmlOutputFromFile('Index')
+    .setTitle('Muestras')
+    .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover')
+    .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+}
+
+function doPost(e) {
+  try {
+    const body = JSON.parse(e.postData.contents);
+    const fns = { getData, guardarCaja, guardarProducto, ingresar, mover, subirFoto, historial };
+    const fn = fns[body.fn];
+    if (!fn) throw new Error('Función desconocida: ' + body.fn);
+    return json_(fn.apply(null, body.args || []));
+  } catch (err) {
+    return json_({ error: String((err && err.message) || err) });
+  }
+}
+
+function json_(o) {
+  return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
+}
+
+/* ───────────── Configuración inicial ───────────── */
+
+function configurar() {
+  const ss = SpreadsheetApp.getActive();
+  Object.keys(HOJAS).forEach(function (nombre) {
+    let sh = ss.getSheetByName(nombre);
+    if (!sh) sh = ss.insertSheet(nombre);
+    const cols = HOJAS[nombre];
+    sh.getRange(1, 1, 1, cols.length).setValues([cols]).setFontWeight('bold');
+    sh.setFrozenRows(1);
+    // Todo como texto: así los códigos de barras no pierden ceros ni se vuelven 7,79E+12.
+    sh.getRange(1, 1, sh.getMaxRows(), cols.length).setNumberFormat('@');
+  });
+  const hoja1 = ss.getSheetByName('Hoja 1') || ss.getSheetByName('Sheet1');
+  if (hoja1 && hoja1.getLastRow() === 0 && ss.getSheets().length > 1) ss.deleteSheet(hoja1);
+  carpetaFotos_();
+  bump_();
+  return 'Listo';
+}
+
+function carpetaFotos_() {
+  const props = PropertiesService.getScriptProperties();
+  const id = props.getProperty('CARPETA_FOTOS');
+  if (id) { try { return DriveApp.getFolderById(id); } catch (e) {} }
+  const f = DriveApp.createFolder('Muestras · fotos');
+  props.setProperty('CARPETA_FOTOS', f.getId());
+  return f;
+}
+
+/* ───────────── Lectura ───────────── */
+
+function filas_(nombre) {
+  const sh = SpreadsheetApp.getActive().getSheetByName(nombre);
+  if (!sh) throw new Error('Falta la hoja "' + nombre + '". Ejecutá configurar().');
+  const n = sh.getLastRow() - 1;
+  if (n < 1) return [];
+  const cols = HOJAS[nombre];
+  return sh.getRange(2, 1, n, cols.length).getDisplayValues().map(function (r, i) {
+    const o = { _fila: i + 2 };
+    cols.forEach(function (c, k) { o[c] = r[k]; });
+    return o;
+  });
+}
+
+function limpiar_(o) { const c = Object.assign({}, o); delete c._fila; return c; }
+
+function getData() {
+  const movs = filas_('Movimientos');
+  return {
+    rev: PropertiesService.getScriptProperties().getProperty('rev') || '0',
+    cajas: filas_('Cajas').map(limpiar_),
+    productos: filas_('Productos').map(limpiar_),
+    stock: filas_('Stock').map(function (s) { return { codigo: s.codigo, caja: s.caja, cant: Number(s.cant) || 0, at: Number(s.at) || 0 }; }),
+    movs: movs.slice(-MOVS_A_ENVIAR).reverse().map(function (m) { const x = limpiar_(m); x.at = Number(x.at) || 0; x.cant = Number(x.cant) || 0; return x; }),
+  };
+}
+
+function historial(codigo) {
+  codigo = String(codigo || '');
+  return filas_('Movimientos').filter(function (m) { return m.codigo === codigo; }).reverse()
+    .map(function (m) { const x = limpiar_(m); x.at = Number(x.at) || 0; x.cant = Number(x.cant) || 0; return x; });
+}
+
+/* ───────────── Escritura (siempre con candado) ───────────── */
+
+function conCandado_(fn) {
+  const lock = LockService.getScriptLock();
+  lock.waitLock(20000);
+  try { const r = fn(); bump_(); SpreadsheetApp.flush(); return r; }
+  finally { lock.releaseLock(); }
+}
+function bump_() { PropertiesService.getScriptProperties().setProperty('rev', String(Date.now())); }
+
+function escribir_(nombre, obj, fila) {
+  const sh = SpreadsheetApp.getActive().getSheetByName(nombre);
+  const cols = HOJAS[nombre];
+  const valores = [cols.map(function (c) { return obj[c] === undefined || obj[c] === null ? '' : String(obj[c]); })];
+  const f = fila || sh.getLastRow() + 1;
+  sh.getRange(f, 1, 1, cols.length).setNumberFormat('@').setValues(valores);
+}
+
+function texto_(v, max) { return String(v === undefined || v === null ? '' : v).trim().slice(0, max || 200); }
+
+function guardarCaja(c) {
+  return conCandado_(function () {
+    const nombre = texto_(c.nombre, 80).toUpperCase().replace(/\s*-\s*/g, ' - ');
+    if (!nombre) throw new Error('La caja necesita un nombre.');
+    const cajas = filas_('Cajas');
+    const id = texto_(c.id, 40) || ('c-' + Utilities.getUuid().slice(0, 8));
+    if (cajas.some(function (x) { return x.id !== id && x.nombre.toLowerCase() === nombre.toLowerCase(); }))
+      throw new Error('Ya hay una caja con ese nombre.');
+    const ant = cajas.filter(function (x) { return x.id === id; })[0];
+    escribir_('Cajas', {
+      id: id, nombre: nombre, lugar: texto_(c.lugar, 80),
+      creado: ant ? ant.creado : Date.now(), por: ant ? ant.por : texto_(c.por, 60),
+    }, ant && ant._fila);
+    const d = getData(); d.id = id; return d;
+  });
+}
+
+function upsertProducto_(p, por) {
+  const codigo = texto_(p.codigo, 60);
+  if (!codigo) throw new Error('Falta el código del producto.');
+  if (!texto_(p.nombre)) throw new Error('Falta el nombre del producto.');
+  const ant = filas_('Productos').filter(function (x) { return x.codigo === codigo; })[0];
+  const o = {};
+  HOJAS.Productos.forEach(function (k) { o[k] = ant ? ant[k] : ''; });
+  ['nombre', 'marca', 'cliente', 'proyecto', 'alto', 'ancho', 'prof', 'peso', 'foto'].forEach(function (k) {
+    if (p[k] !== undefined) o[k] = texto_(p[k]);
+  });
+  o.codigo = codigo;
+  o.actualizado = Date.now();
+  if (!ant) { o.creado = Date.now(); o.por = texto_(por, 60); }
+  escribir_('Productos', o, ant && ant._fila);
+  return o;
+}
+
+function guardarProducto(p, por) {
+  return conCandado_(function () { upsertProducto_(p, por); return getData(); });
+}
+
+function sumarStock_(codigo, caja, delta) {
+  const st = filas_('Stock').filter(function (s) { return s.codigo === codigo && s.caja === caja; })[0];
+  const cur = st ? Number(st.cant) || 0 : 0;
+  const n = cur + delta;
+  if (n < 0) throw new Error('No hay tantas unidades en esa caja (hay ' + cur + ').');
+  escribir_('Stock', { codigo: codigo, caja: caja, cant: n, at: Date.now() }, st && st._fila);
+}
+
+function cajaExiste_(id) { return filas_('Cajas').some(function (c) { return c.id === id; }); }
+
+/** Ingreso de un producto (nuevo o ya cargado) a una caja. */
+function ingresar(d) {
+  return conCandado_(function () {
+    const cant = Math.floor(Number(d.cant));
+    if (!(cant > 0)) throw new Error('La cantidad tiene que ser mayor a 0.');
+    if (!cajaExiste_(d.caja)) throw new Error('Esa caja no existe.');
+    let nombre;
+    if (d.producto) nombre = upsertProducto_(d.producto, d.por).nombre;
+    const codigo = texto_(d.producto ? d.producto.codigo : d.codigo, 60);
+    if (!nombre) {
+      const p = filas_('Productos').filter(function (x) { return x.codigo === codigo; })[0];
+      if (!p) throw new Error('Ese producto no está cargado.');
+      nombre = p.nombre;
+    }
+    sumarStock_(codigo, d.caja, cant);
+    escribir_('Movimientos', { at: Date.now(), tipo: d.producto && d.nuevo ? 'ingreso' : 'agregar', codigo: codigo, nombre: nombre, desde: '', hacia: d.caja, cant: cant, nota: '', por: texto_(d.por, 60) });
+    const r = getData(); r.codigo = codigo; return r;
+  });
+}
+
+/** Mover entre cajas, devolver al cliente o descartar. */
+function mover(d) {
+  return conCandado_(function () {
+    const tipo = ['mover', 'devolver', 'descartar'].indexOf(d.tipo) >= 0 ? d.tipo : null;
+    if (!tipo) throw new Error('Acción desconocida.');
+    const cant = Math.floor(Number(d.cant));
+    if (!(cant > 0)) throw new Error('La cantidad tiene que ser mayor a 0.');
+    const codigo = texto_(d.codigo, 60);
+    const p = filas_('Productos').filter(function (x) { return x.codigo === codigo; })[0];
+    if (!p) throw new Error('Ese producto no está cargado.');
+    if (tipo === 'mover') {
+      if (!cajaExiste_(d.hacia)) throw new Error('La caja de destino no existe.');
+      if (d.hacia === d.desde) throw new Error('El destino es la misma caja.');
+    }
+    sumarStock_(codigo, d.desde, -cant);
+    if (tipo === 'mover') sumarStock_(codigo, d.hacia, cant);
+    escribir_('Movimientos', { at: Date.now(), tipo: tipo, codigo: codigo, nombre: p.nombre, desde: d.desde, hacia: tipo === 'mover' ? d.hacia : '', cant: cant, nota: texto_(d.nota, 200), por: texto_(d.por, 60) });
+    return getData();
+  });
+}
+
+/** Recibe una foto en base64 (ya achicada por la app) y devuelve su id de Drive. */
+function subirFoto(base64, mime, nombre) {
+  const bytes = Utilities.base64Decode(String(base64));
+  if (bytes.length > 4 * 1024 * 1024) throw new Error('La foto es muy pesada.');
+  const blob = Utilities.newBlob(bytes, mime || 'image/jpeg', texto_(nombre, 80) || ('muestra-' + Date.now() + '.jpg'));
+  const file = carpetaFotos_().createFile(blob);
+  file.setSharing(DriveApp.Access.ANYONE_WITH_LINK, DriveApp.Permission.VIEW);
+  return { id: file.getId() };
+}
