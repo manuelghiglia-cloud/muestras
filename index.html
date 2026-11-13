@@ -284,6 +284,11 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 .row-p.hist .ph{filter:grayscale(1);opacity:.7}
 .falta{display:flex;align-items:center;gap:12px;width:100%;margin-top:12px;padding:12px 16px;border:0;border-radius:20px;background:var(--acc-soft);color:var(--ink);text-align:left;font:inherit;font-size:13px;cursor:pointer;min-height:44px}
 .falta span{flex:1;display:flex;flex-direction:column}.falta b{font-size:14.5px;color:var(--acc-ink)}
+.encontradas{display:flex;flex-direction:column;gap:2px}.encontradas b{font-size:15px;font-weight:800}.encontradas>span{font-size:13px;color:var(--ink-2)}
+.opciones{display:grid;grid-template-columns:repeat(auto-fill,minmax(88px,1fr));gap:8px;margin:10px 0 4px}
+.opc{border:0;padding:6px;background:#fff;border-radius:16px;aspect-ratio:1;cursor:pointer;box-shadow:0 0 0 1.5px var(--fill-2)}
+.opc img{width:100%;height:100%;object-fit:contain;display:block}.opc:focus-visible{outline:3px solid var(--acc)}
+.encontradas .btns2{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:6px}.encontradas .btn{min-height:44px;font-size:14px;padding:0 10px;white-space:nowrap}
 </style>
 </head>
 <body>
@@ -307,7 +312,7 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-const APP_VERSION='202611121320';
+const APP_VERSION='202611131015';
 async function chequearVersion(){ try{ if(location.protocol==='file:') return; const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'}); const nueva=(await r.text()).trim();
   if(nueva&&nueva!==APP_VERSION){ const u=new URL(location.href); if(u.searchParams.get('v')===nueva) return; u.searchParams.set('v',nueva); location.replace(u.toString()); } }catch(e){} }
 chequearVersion();
@@ -770,7 +775,7 @@ producto:{ html(){
   const c=V.p.codigo, p=S.productos.get(c); if(!p) return `${cabecera()}<div class="empty"><b>No encontré ese producto</b></div>`;
   const st=stockDe(c).sort((a,b)=>b.cant-a.cant), tot=st.reduce((a,s)=>a+s.cant,0);
   const dims=[p.alto,p.ancho,p.prof].filter(Boolean);
-  const meta=[p.cliente&&`<span class="acc">${esc(p.cliente)}</span>`,p.marca&&`<span>${esc(p.marca)}</span>`,p.proyecto&&`<span>${esc(p.proyecto)}</span>`].filter(Boolean).join('');
+  const meta=[p.marca&&`<span>${esc(p.marca)}</span>`].filter(Boolean).join('');
   const hist=V.f.hist;
   return `${cabecera(iconBtn(`data-go="ingreso" data-codigo="${esc(c)}" data-editar="1"`,'edit','Editar producto'))}
   ${p.foto?`<div class="photo"><img src="${fotoUrl(p.foto)}" alt="Foto de ${esc(p.nombre)}"></div>`:''}
@@ -794,7 +799,7 @@ producto:{ html(){
 ingreso:{ html(){
   const ed=!!V.p.editar, c=V.p.codigo, f=V.f, cls=clientes();
   if(!f._init){ const p=S.productos.get(c)||{}; const cliCaja=V.p.caja&&S.cajas.get(V.p.caja)?.nombre?.split(' - ')[0]; Object.assign(f,{_init:1,_img:p.foto?null:(V.p.img||null),nombre:p.nombre||'',marca:p.marca||'',cliente:p.cliente||(cliCaja?(cls.find(x=>norm(x)===norm(cliCaja))||cliCaja):''),proyecto:p.proyecto||'',alto:p.alto||'',ancho:p.ancho||'',prof:p.prof||'',peso:p.peso||'',foto:p.foto||'',cant:f.cant||V.p.cant||1,destino:V.p.caja||''}); }
-  const modoFichas=!!V.p.cola; if(modoFichas&&!f._imgSet){ f._imgSet=1; if(!f.foto&&V.p.imgs&&V.p.imgs[c]) f._img=V.p.imgs[c]; }
+  const modoFichas=!!V.p.cola; if(ed&&!f._imgSet){ f._imgSet=1; const p0=S.productos.get(c)||{}; if(!p0.foto&&c&&!c.startsWith('MU-')){ const vista=V, pre=V.p.imgs&&V.p.imgs[c]; buscarFotos(c,pre).then(fs=>{ if(V!==vista||vista.f.foto||!fs.length) return; vista.f._imgs=fs; vista.f._img=fs[0]; pintarFoto(vista); }); } }
   const enLista=cls.some(x=>norm(x)===norm(f.cliente));
   const otro=f._otro||(f.cliente&&!enLista)||!cls.length;
   const st=f._cat;
@@ -806,10 +811,7 @@ ingreso:{ html(){
   ${modoFichas?fotoMedidasHTML(f,true):''}
   <div class="card">
    <div class="f"><label for="nombre">Producto</label><input class="in" id="nombre" data-f="nombre" placeholder="Sedal Shampoo Ceramidas 340 ml" value="${esc(f.nombre)}" autocomplete="off">${status}<div id="fichaIn">${fichaHTML(f.nombre)}</div></div>
-   <div class="grid2"><div class="f"><label for="marca">Marca</label><input class="in" id="marca" data-f="marca" value="${esc(f.marca)}" autocomplete="off"></div>
-   <div class="f"><label for="proyecto">Proyecto <span class="opt">(opcional)</span></label><input class="in" id="proyecto" data-f="proyecto" placeholder="BP-0021" value="${esc(f.proyecto)}" autocomplete="off"></div></div>
-   <div class="f"><span class="lbl" id="cli-l">Cliente</span>${cls.length?`<div class="chips" role="group" aria-labelledby="cli-l">${cls.map(x=>`<button type="button" class="chip" data-cli="${esc(x)}" aria-pressed="${!otro&&norm(x)===norm(f.cliente)}">${esc(x)}</button>`).join('')}<button type="button" class="chip" data-cli="__otro" aria-pressed="${!!otro}">Otro</button></div>`:''}
-   ${otro?`<input class="in" id="cliente" data-f="cliente" aria-labelledby="cli-l" placeholder="Nombre del cliente" value="${esc(enLista?'':f.cliente)}" autocomplete="off">`:''}</div>
+   <div class="f"><label for="marca">Marca</label><input class="in" id="marca" data-f="marca" value="${esc(f.marca)}" autocomplete="off"></div>
   </div>
   ${ed||V.p.paraMov?'':`<div class="d-card">${selectorCaja('destino',f.destino,{label:'Dónde lo guardás'})}<div class="between" style="align-items:center"><span class="lbl">Cantidad</span>${stepper('cant',f.cant)}</div></div>`}
   ${modoFichas?'':fotoMedidasHTML(f,false)}
@@ -877,10 +879,40 @@ async function buscarProductoExterno(codigo){
   }
   return null;
 }
+// Tiendas online consultadas directo desde el celular (si el sitio lo permite).
+const vtexCache={};
+function buscarVtex(codigo){
+  if(vtexCache[codigo]) return vtexCache[codigo];
+  return vtexCache[codigo]=(async()=>{
+    const rs=await Promise.all(['https://www.farmacity.com','https://www.carrefour.com.ar'].map(base=>conTiempo(fetch(`${base}/api/catalog_system/pub/products/search?fq=alternateIds_Ean:${codigo}`).then(r=>r.ok?r.json():null).catch(()=>null),6000)));
+    let res=null;
+    for(const a of rs){ const p=a&&a[0]; if(!p) continue; const items=p.items||[]; const it=items.find(x=>String(x.ean)===codigo)||items[0]||{};
+      let nombre=String(it.nameComplete||p.productName||'').trim(); if(items.length>1&&it.name&&!nombre.includes(it.name)) nombre+=' '+it.name;
+      const imgs=(it.images||[]).slice(0,2).map(i=>i.imageUrl);
+      if(!res) res={nombre,marca:String(p.brand||'').trim(),imgs}; else res.imgs.push(...imgs); }
+    return res;
+  })();
+}
+// Fotos del producto: prueba varias fuentes a la vez y devuelve hasta 4 opciones.
+const conTiempo=(pr,ms)=>Promise.race([pr,new Promise(r=>setTimeout(()=>r(null),ms))]);
+async function buscarFotos(codigo,extra){
+  if(!/^\d{8,14}$/.test(codigo)) return extra?[extra]:[];
+  const vtex=[buscarVtex(codigo).then(v=>v?v.imgs:[])];
+  const off=['https://world.openfoodfacts.org','https://world.openbeautyfacts.org'].map(base=>conTiempo(fetch(`${base}/api/v2/product/${codigo}.json?fields=image_front_url,image_url`).then(r=>r.ok?r.json():null).then(j=>{ const p=j&&j.status===1&&j.product; return p?[p.image_front_url||p.image_url].filter(Boolean):[]; }).catch(()=>[]),6000));
+  const todas=(await Promise.all([...vtex,...off])).flat().filter(Boolean);
+  return [...new Set([extra,...todas].filter(Boolean))].slice(0,4);
+}
+// Baja una foto encontrada y la guarda como foto del producto (desde el celular; si el sitio no lo permite, la baja el Apps Script).
+async function guardarFotoDeUrl(vista,url){
+  try{ const r=await conTiempo(fetch(url,{mode:'cors'}),8000); if(r&&r.ok){ const b=await r.blob(); if(b.size>1000&&/^image\//.test(b.type)){ const chica=await achicarFoto(b); const enc=await encuadrar(chica,{}); await subirFotoBlob(vista,enc,true); return true; } } }catch(e){}
+  const r=await call('fotoDeTienda',url,'muestra-'+(vista.p.codigo||'')+'-tienda.jpg',vista.f.foto||''); vista.f.foto=r.id; vista.f._prev=url; vista.f._blob=null; return true;
+}
 // Carrefour y Farmacity (vía Apps Script): nombre comercial, tono, categoría y foto.
-function buscarEnTiendas(codigo){
-  if(!/^\d{8,14}$/.test(codigo)) return Promise.resolve(null);
-  return Promise.race([call('buscarEAN',codigo).catch(()=>null),new Promise(r=>setTimeout(()=>r(null),9000))]);
+async function buscarEnTiendas(codigo){
+  if(!/^\d{8,14}$/.test(codigo)) return null;
+  const [srv,dir]=await Promise.all([conTiempo(call('buscarEAN',codigo).catch(()=>null),9000),buscarVtex(codigo)]);
+  if(srv&&srv.nombre) return srv;
+  return dir&&dir.nombre?{nombre:dir.nombre,marca:dir.marca,imagen:dir.imgs[0]||''}:null;
 }
 async function completarDesdeCatalogo(){
   const codigo=V.p.codigo; const vista=V; const enIngreso=()=>V===vista&&V.view==='ingreso'&&V.p.codigo===codigo;
@@ -888,6 +920,7 @@ async function completarDesdeCatalogo(){
   const [t,r0]=await Promise.all([buscarEnTiendas(codigo),buscarProductoExterno(codigo)]);
   const r=t&&t.nombre?t:r0;
   if(!enIngreso()) return;
+  buscarFotos(codigo,t&&t.imagen).then(fs=>{ if(V!==vista||vista.f.foto||!fs.length) return; vista.f._imgs=fs; vista.f._img=fs[0]; pintarFoto(vista); });
   if(r){ if(!V.f.nombre) V.f.nombre=r.nombre; if(!V.f.marca) V.f.marca=r.marca; V.f._cat='ok'; V.f._fuente=r.fuente;
     if(r.categoria) V.f._categoria=r.categoria; if(r.imagen) V.f._img=r.imagen; }
   else V.f._cat='no';
@@ -1012,14 +1045,14 @@ async function resolverNuevo(vista,l){
     const r=t&&t.nombre?t:r0;
     if(r&&r.nombre&&miNombre){
       const d=await call('guardarProducto',{codigo,nombre:r.nombre,marca:r.marca||'',cliente:clienteDeCaja(vista.f.caja)},miNombre); aplicar(d); delete l.pend; l.creado=1;
-      if(r.imagen) l.img=r.imagen;
+      buscarFotos(codigo,r.imagen).then(fs=>{ if(fs.length&&!(S.productos.get(codigo)||{}).foto){ l.img=fs[0]; if(V===vista) pintarLineas(); } });
     } else l.pend='manual';
   }catch(e){ l.pend='manual'; }
   if(V===vista) pintarLineas();
 }
 async function usarFotoLinea(vista,l){
   const img=l.img; l.img=null; l.fotoGuardando=1; if(V===vista) pintarLineas();
-  try{ const r=await call('fotoDeTienda',img,'muestra-'+l.codigo+'-tienda.jpg',''); const d=await call('guardarProducto',{codigo:l.codigo,nombre:S.productos.get(l.codigo)?.nombre||l.codigo,foto:r.id},miNombre); aplicar(d); }
+  try{ const tmp={p:{codigo:l.codigo},f:{}}; await guardarFotoDeUrl(tmp,img); const d=await call('guardarProducto',{codigo:l.codigo,nombre:S.productos.get(l.codigo)?.nombre||l.codigo,foto:tmp.f.foto},miNombre); aplicar(d); }
   catch(e){ l.img=img; toast('No se pudo bajar la foto.'); }
   delete l.fotoGuardando; if(V===vista) pintarLineas();
 }
@@ -1176,11 +1209,12 @@ const ACCIONES={
     const d=await escribir('devolverPrestamo',[{id:V.p.id,caja:f.caja,por:miNombre}]); if(!d) return;
     toast('Devolución registrada'); back();
   },
-  async usarFotoTienda(){ const vista=V, f=vista.f; if(!f._img) return;
-    f._subiendo='Bajando la foto…'; pintarFoto(vista);
-    try{ const r=await call('fotoDeTienda',f._img,'muestra-'+(vista.p.codigo||'')+'-tienda.jpg',f.foto||''); f.foto=r.id; f._prev=f._img; f._img=null; f._blob=null; f._orig=null; if(V===vista) guardarBorrador(); }
-    catch(e){ toast('No se pudo bajar la foto. Sacá una vos.'); }
+  async usarFotoTienda(el){ const vista=V, f=vista.f; const url=(el&&el.dataset&&el.dataset.url)||f._img; if(!url) return;
+    f._subiendo='Guardando la foto…'; pintarFoto(vista);
+    try{ await guardarFotoDeUrl(vista,url); f._img=null; f._imgs=null; f._orig=null; if(V===vista) guardarBorrador(); }
+    catch(e){ toast('No se pudo guardar esa foto. Probá con otra o sacá una.'); }
     f._subiendo=0; pintarFoto(vista); },
+  galeria(){ $('#galeriaIn')?.click(); },
   limpiarQ(){ V.f.q=''; render(); $('#q')?.focus(); },
   async fotoAlterna(){ const vista=V, f=vista.f; const usarCut=!f._sinFondo;
     try{
@@ -1247,7 +1281,7 @@ document.addEventListener('click',e=>{
   const sc=e.target.closest('[data-scan]'); if(sc){ e.preventDefault(); try{ scanIntent=JSON.parse(sc.dataset.scan); }catch(_){ scanIntent={tipo:'abrir'}; } go('camara',{}); return; }
   const intent=e.target.closest('[data-intent]'); if(intent){ try{ scanIntent=JSON.parse(intent.dataset.intent); }catch(_){ scanIntent={tipo:'abrir'}; } return; }
   const g=e.target.closest('[data-go]'); if(g){ e.preventDefault(); const d=g.dataset; go(d.go,{id:d.id,codigo:d.codigo,editar:d.editar,caja:d.caja||undefined,cant:d.cant?+d.cant:undefined,apartado:d.apartado}); return; }
-  const a=e.target.closest('[data-act]'); if(a){ e.preventDefault(); const k=a.dataset.act; if(k==='home') home(); else ACCIONES[k]&&ACCIONES[k](); return; }
+  const a=e.target.closest('[data-act]'); if(a){ e.preventDefault(); const k=a.dataset.act; if(k==='home') home(); else ACCIONES[k]&&ACCIONES[k](a); return; }
   const st=e.target.closest('[data-step]'); if(st){ const inp=$('#'+st.dataset.step); const max=Number(inp.dataset.max)||Infinity; let n=(parseInt(inp.value,10)||0)+Number(st.dataset.d); n=Math.max(1,Math.min(max,n)); inp.value=n; V.f[st.dataset.step]=n; refrescarBoton(); return; }
   const cl=e.target.closest('[data-cli]'); if(cl){ const y=window.scrollY; if(cl.dataset.cli==='__otro'){ V.f._otro=true; V.f.cliente=''; render(); window.scrollTo(0,y); $('#cliente')?.focus(); } else { V.f._otro=false; V.f.cliente=cl.dataset.cli; render(); window.scrollTo(0,y); } return; }
   const ac=e.target.closest('[data-accion]'); if(ac){ const y=window.scrollY; V.f.accion=ac.dataset.accion; render(); window.scrollTo(0,y); return; }
@@ -1260,6 +1294,7 @@ document.addEventListener('input',e=>{
   if(k==='nombre'&&$('#fichaIn')) $('#fichaIn').innerHTML=fichaHTML(t.value);
 });
 document.addEventListener('change',e=>{
+  if(e.target.id==='galeriaIn'){ const file=e.target.files&&e.target.files[0]; e.target.value=''; if(file) fotoElegida(V,file); return; }
   const t=e.target; if(t.id==='cant'){ const max=Number(t.dataset.max)||Infinity; V.f.cant=Math.max(1,Math.min(max,parseInt(t.value,10)||1)); refrescarBoton(); return; }
   if(t.dataset&&t.dataset.ldesde!=null){ const l=V.f.lineas[+t.dataset.ldesde]; if(l){ l.desde=t.value; l.cant=Math.min(l.cant,maxLinea(l))||1; pintarLineas(); } return; }
   if(V.view==='mov'&&t.tagName==='SELECT'&&t.dataset.f){ V.f[t.dataset.f]=t.value; pintarLineas(); return; }
@@ -1306,13 +1341,17 @@ async function encuadrar(blob,{transparente}={}){
 }
 function fotoHTML(f){
   if(f._subiendo&&!f.foto) return `<button type="button" class="drop" data-act="foto">${esc(f._subiendo)}</button>`;
+  const gal=`<input type="file" id="galeriaIn" accept="image/*" hidden>`;
+  if(!f.foto&&f._imgs&&f._imgs.length) return `<div class="encontradas"><b>Encontré ${f._imgs.length===1?'una foto':'estas fotos'}</b><span>Tocá la que quieras usar, o sacá la tuya.</span>
+    <div class="opciones">${f._imgs.map((u,i)=>`<button type="button" class="opc" data-act="usarFotoTienda" data-url="${esc(u)}" aria-label="Usar la foto ${i+1}"><img src="${esc(u)}" alt="" referrerpolicy="no-referrer" onerror="this.closest('.opc').remove()"></button>`).join('')}</div>
+    <div class="btns2"><button type="button" class="btn" data-act="foto">${ico('cam',18)}Sacar foto</button><button type="button" class="btn" data-act="galeria">Elegir de la galería</button></div>${gal}</div>`;
   if(!f.foto&&f._img) return `<div class="tienda"><img src="${esc(f._img)}" alt="Foto del producto" referrerpolicy="no-referrer"><div><b>Encontré una foto</b><span>¿Usás esta o sacás otra?</span><div class="btns2"><button type="button" class="btn pri" data-act="usarFotoTienda">Usar esta</button><button type="button" class="btn" data-act="foto">${ico('cam',18)}Sacar otra</button></div></div></div>`;
-  if(!f.foto) return `<button type="button" class="drop" data-act="foto">${ico('cam',22)}Sacar foto</button>`;
+  if(!f.foto) return `<button type="button" class="drop" data-act="foto">${ico('cam',22)}Sacar foto</button><button type="button" class="link" style="align-self:center;padding:6px 0" data-act="galeria">o elegila de la galería</button>${gal}`;
   const estado=f._bg?`<span class="tag" style="align-self:flex-start;display:inline-flex;gap:6px;align-items:center"><svg class="spin" viewBox="0 0 100 100" aria-hidden="true" style="width:14px;height:14px;margin:0"><path d="${SOL}" fill="#a35e47"/></svg>${esc(f._bg)}</span>`:'';
   const alt=!f._bg&&f._orig?`<button type="button" class="link" style="padding:4px 0" data-act="fotoAlterna">${f._sinFondo?'Usar la foto original':'Sacarle el fondo'}</button>`:'';
   const aj=!f._bg&&f._blob?`<button type="button" class="link" style="padding:4px 0" data-act="ajustar">Ajustar recorte</button>`:'';
   return `<button type="button" class="drop con" data-act="foto"><img src="${f._prev||fotoUrl(f.foto)}" alt="Foto cargada"></button>${estado}
-   <div style="display:flex;gap:4px 16px;flex-wrap:wrap;margin-top:-6px">${aj}${alt}<button type="button" class="link" style="padding:4px 0" data-act="foto">Sacar otra</button></div>`;
+   <div style="display:flex;gap:4px 16px;flex-wrap:wrap;margin-top:-6px">${aj}${alt}<button type="button" class="link" style="padding:4px 0" data-act="foto">Sacar otra</button><button type="button" class="link" style="padding:4px 0" data-act="galeria">Elegir de la galería</button></div>${gal}`;
 }
 function pintarFoto(vista){ if(V!==vista) return; const z=$('#fotoZona'); if(z) z.innerHTML=fotoHTML(vista.f); }
 async function subirFotoBlob(vista,blob,sinFondo){

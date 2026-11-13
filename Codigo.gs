@@ -392,7 +392,7 @@ function buscarEAN(ean) {
 /** Baja la foto del producto desde la tienda y la guarda en la carpeta de fotos. */
 function fotoDeTienda(url, nombre, reemplaza) {
   url = String(url || '');
-  if (!/^https:\/\/[a-z0-9.-]+\.(vtexassets\.com|vteximg\.com\.br)\//i.test(url)) throw new Error('Esa foto no es de una tienda conocida.');
+  if (!/^https:\/\/[a-z0-9.-]+\.(vtexassets\.com|vteximg\.com\.br|openfoodfacts\.org|openbeautyfacts\.org)\//i.test(url)) throw new Error('Esa foto no es de una tienda conocida.');
   const r = UrlFetchApp.fetch(url, { muteHttpExceptions: true });
   if (r.getResponseCode() !== 200) throw new Error('No se pudo bajar la foto.');
   const blob = r.getBlob();
