@@ -177,6 +177,8 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 .row-p + .row-p{margin-top:4px}
 .row-p .ph{flex:none;width:44px;height:44px;border-radius:12px;background:var(--fill);display:flex;align-items:center;justify-content:center;overflow:hidden}
 .row-p .ph img{width:100%;height:100%;object-fit:contain}
+.ph img{display:block;width:100%;height:100%;object-fit:contain}
+.linea .ph{padding:3px;box-sizing:border-box}
 .row-p .tx{flex:1;min-width:0;display:flex;flex-direction:column;gap:1px}
 .row-p .tx b{font-size:14.5px;font-weight:800;line-height:1.25}
 .row-p .tx span{font-size:12.5px;color:var(--ink-2)}
@@ -421,7 +423,7 @@ body.escaneo .toast{background:#fff;color:#000}
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-const APP_VERSION='202611131358';
+const APP_VERSION='202611131401';
 async function chequearVersion(){ try{ if(location.protocol==='file:') return; const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'}); const nueva=(await r.text()).trim();
   if(nueva&&nueva!==APP_VERSION){ const u=new URL(location.href); if(u.searchParams.get('v')===nueva) return; u.searchParams.set('v',nueva); location.replace(u.toString()); } }catch(e){} }
 chequearVersion();
