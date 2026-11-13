@@ -312,7 +312,7 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-const APP_VERSION='202611131015';
+const APP_VERSION='202611131048';
 async function chequearVersion(){ try{ if(location.protocol==='file:') return; const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'}); const nueva=(await r.text()).trim();
   if(nueva&&nueva!==APP_VERSION){ const u=new URL(location.href); if(u.searchParams.get('v')===nueva) return; u.searchParams.set('v',nueva); location.replace(u.toString()); } }catch(e){} }
 chequearVersion();
@@ -354,6 +354,16 @@ function fotoMedidasHTML(f,principal){ return `<div class="card"${principal?' st
    <div id="fotoZona" style="display:flex;flex-direction:column;gap:10px">${fotoHTML(f)}</div>
    <div class="grid2">${[['alto','Alto (mm)'],['ancho','Ancho (mm)'],['prof','Profundidad (mm)'],['peso','Peso (g)']].map(([k,l])=>`<div class="f"><label for="${k}" style="font-size:12.5px;font-weight:700;color:var(--ink-2)">${l}</label><input class="in" id="${k}" data-f="${k}" inputmode="decimal" value="${esc(f[k])}"></div>`).join('')}</div>
   </div>`; }
+async function correrDiag(vista){
+  const f=vista.f; f.res={}; const pinta=()=>{ if(V===vista) render(); };
+  const A='7501006721133', B='3600531697426';
+  const t=async(k,fn)=>{ try{ f.res[k]=await fn(); }catch(e){ const m=String(e&&e.message||e); f.res[k]={ok:false,txt:/desconocida/i.test(m)?'El Apps Script tiene una versión vieja: pegá el Codigo.gs y publicá una Nueva versión.':/fetch|load|network/i.test(m)?'El sitio no deja consultarlo desde la app.':'Error: '+m.slice(0,140)}; } pinta(); };
+  t('srv',async()=>{ const a=await conTiempo(call('buscarEAN',A),15000); const b=await conTiempo(call('buscarEAN',B),15000); const ok=!!(a&&a.nombre||b&&b.nombre);
+    return {ok,txt:ok?`Encontró: ${(a&&a.nombre)||'-'} / ${(b&&b.nombre)||'-'}${(a&&a.imagen)||(b&&b.imagen)?' (con foto)':''}`:'Respondió pero no encontró nada (las tiendas no le contestan a Google)'}; });
+  const dir=(base)=>async()=>{ const r=await conTiempo(fetch(`${base}/api/catalog_system/pub/products/search?fq=alternateIds_Ean:${A}`),8000); if(!r) return {ok:false,txt:'No respondió'}; const j=await r.json(); return {ok:!!(j&&j.length),txt:j&&j.length?'Funciona: '+j[0].productName:'Respondió vacío'}; };
+  t('far',dir('https://www.farmacity.com')); t('car',dir('https://www.carrefour.com.ar'));
+  t('off',async()=>{ const r=await conTiempo(fetch(`https://world.openfoodfacts.org/api/v2/product/7790895000430.json?fields=product_name,image_front_url`),8000); if(!r) return {ok:false,txt:'No respondió'}; const j=await r.json(); return {ok:j.status===1,txt:j.status===1?`Funciona: ${j.product.product_name||'(sin nombre)'}${j.product.image_front_url?' (con foto)':''}`:'Funciona, pero no tiene ese producto'}; });
+}
 function salidaDe(c){ let x=S.salidas&&S.salidas[c]; if(!x){ const m=S.movs.find(m=>m.codigo===c&&['devolver','usada','descartar'].includes(m.tipo)); if(m) x={tipo:m.tipo,at:m.at,por:m.por}; } return x||null; }
 function textoSalida(c,corto){ const x=salidaDe(c); if(!x) return corto?'Ya no está en el estudio':'Ya no está en el estudio.';
   const q={devolver:'Se devolvió al cliente',usada:'Se usó',descartar:'Se descartó'}[x.tipo]||'Salió'; return `${q} ${cuando(x.at)}${!corto&&x.por?` (${x.por})`:''}${corto?'':'.'}`; }
@@ -653,7 +663,7 @@ function cuerpoInicio(){
    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:4px"><button class="link acc" data-go="nuevaCaja">+ Nueva caja</button><button class="link acc" data-go="productos">Todos los productos</button></div>`
    :`<div class="empty"><b>Todavía no hay cajas</b><p>Creá la primera, imprimí su etiqueta y pegala en la caja o el estante.</p><button class="btn pri big" data-go="nuevaCaja">${ico('plus',20)}Crear la primera caja</button></div>`}
   ${movs.length?`<div class="sec"><h2>Actividad</h2><button class="link acc" style="padding:0" data-go="actividad">Ver toda</button></div><ol class="feed">${movs.map(textoMov).join('')}</ol>`:''}
-  <p class="help" style="text-align:center;margin:28px 0 90px;color:var(--on-dark)">Versión ${APP_VERSION.slice(6,8)}/${APP_VERSION.slice(4,6)} ${APP_VERSION.slice(8,10)}:${APP_VERSION.slice(10,12)}</p>`;
+  <p style="text-align:center;margin:28px 0 90px"><button type="button" class="link" style="font-size:13px;color:var(--ink-3);text-decoration:none" data-go="diag">Versión ${APP_VERSION.slice(6,8)}/${APP_VERSION.slice(4,6)} ${APP_VERSION.slice(8,10)}:${APP_VERSION.slice(10,12)} · Probar fotos</button></p>`;
 }
 function cuerpoCajas(cs,unid){
   return `<div class="sec" style="margin-top:14px"><span class="m">${cs.length} ${cs.length===1?'caja':'cajas'}</span><span class="m">${unidades(unid)}</span></div>
@@ -716,6 +726,15 @@ productos:{ html(){
   ${lista.length?`<div class="grp" style="margin-top:14px">${lista.map(c=>totalDe(c)>0?`<button class="row-p" data-go="producto" data-codigo="${esc(c)}"><span class="ph">${fotoMini(S.productos.get(c))}</span><span class="tx"><b>${esc(prodNom(c))}</b><span>${stockDe(c).map(s=>esc(cajaNom(s.caja))).join(', ')}</span></span><b style="font-size:18px;font-weight:900;color:var(--acc)">${totalDe(c)}</b></button>`:filaHist(c)).join('')}</div>`
   :`<div class="empty"><b>${f.filtro==='historial'?'Todavía no salió nada':'No hay productos'}</b><p>${f.filtro==='historial'?'Cuando devuelvas o uses un producto, su ficha queda acá para consultarla.':'Tocá Agregar producto para empezar.'}</p></div>`}`;
 }},
+
+/* ---------- Diagnóstico de la búsqueda de fotos ---------- */
+diag:{ html(){
+  const r=V.f.res||{};
+  const fila=(k,l)=>{ const x=r[k]; return `<div class="row-p" style="cursor:default"><span class="ph">${x==null?`<svg class="spin" viewBox="0 0 100 100" aria-hidden="true" style="width:20px;height:20px;margin:0"><path d="${SOL}" fill="#a35e47"/></svg>`:ico(x.ok?'check':'x',20,`stroke:${x.ok?'var(--acc)':'var(--red)'};stroke-width:2.6`)}</span><span class="tx"><b>${l}</b><span style="white-space:normal">${x==null?'Probando…':esc(x.txt)}</span></span></div>`; };
+  return `${cabecera()}<h1 class="md">Prueba de fotos</h1><p class="sub">Prueba cada camino para traer fotos. Sacale captura y mandámela.</p>
+  <div class="grp" style="margin-top:16px">${fila('srv','Apps Script')}${fila('far','Farmacity directo')}${fila('car','Carrefour directo')}${fila('off','Open Food / Beauty Facts')}</div>
+  <p class="help" style="margin-top:14px">Versión ${APP_VERSION}</p>`;
+}, enter(){ correrDiag(V); }},
 
 /* ---------- Actividad completa ---------- */
 actividad:{ html(){
@@ -799,7 +818,7 @@ producto:{ html(){
 ingreso:{ html(){
   const ed=!!V.p.editar, c=V.p.codigo, f=V.f, cls=clientes();
   if(!f._init){ const p=S.productos.get(c)||{}; const cliCaja=V.p.caja&&S.cajas.get(V.p.caja)?.nombre?.split(' - ')[0]; Object.assign(f,{_init:1,_img:p.foto?null:(V.p.img||null),nombre:p.nombre||'',marca:p.marca||'',cliente:p.cliente||(cliCaja?(cls.find(x=>norm(x)===norm(cliCaja))||cliCaja):''),proyecto:p.proyecto||'',alto:p.alto||'',ancho:p.ancho||'',prof:p.prof||'',peso:p.peso||'',foto:p.foto||'',cant:f.cant||V.p.cant||1,destino:V.p.caja||''}); }
-  const modoFichas=!!V.p.cola; if(ed&&!f._imgSet){ f._imgSet=1; const p0=S.productos.get(c)||{}; if(!p0.foto&&c&&!c.startsWith('MU-')){ const vista=V, pre=V.p.imgs&&V.p.imgs[c]; buscarFotos(c,pre).then(fs=>{ if(V!==vista||vista.f.foto||!fs.length) return; vista.f._imgs=fs; vista.f._img=fs[0]; pintarFoto(vista); }); } }
+  const modoFichas=!!V.p.cola; if(ed&&!f._imgSet){ f._imgSet=1; const p0=S.productos.get(c)||{}; if(!p0.foto&&c&&!c.startsWith('MU-')){ const vista=V, pre=V.p.imgs&&V.p.imgs[c]; vista.f._buscandoFotos=1; buscarFotos(c,pre).then(fs=>{ vista.f._buscandoFotos=0; if(V!==vista||vista.f.foto) return; if(fs.length){ vista.f._imgs=fs; vista.f._img=fs[0]; } else vista.f._sinFotos=1; pintarFoto(vista); }); } }
   const enLista=cls.some(x=>norm(x)===norm(f.cliente));
   const otro=f._otro||(f.cliente&&!enLista)||!cls.length;
   const st=f._cat;
@@ -884,7 +903,9 @@ const vtexCache={};
 function buscarVtex(codigo){
   if(vtexCache[codigo]) return vtexCache[codigo];
   return vtexCache[codigo]=(async()=>{
-    const rs=await Promise.all(['https://www.farmacity.com','https://www.carrefour.com.ar'].map(base=>conTiempo(fetch(`${base}/api/catalog_system/pub/products/search?fq=alternateIds_Ean:${codigo}`).then(r=>r.ok?r.json():null).catch(()=>null),6000)));
+    const pedir=(base)=>conTiempo(fetch(`${base}/api/catalog_system/pub/products/search?fq=alternateIds_Ean:${codigo}`).then(r=>r.ok?r.json():null).catch(()=>null),6000)
+      .then(a=>a&&a.length?a:conTiempo(fetch(`${base}/api/io/_v/api/intelligent-search/product_search/?query=${codigo}&count=1`).then(r=>r.ok?r.json():null).then(j=>j&&j.products&&j.products.filter(p=>(p.items||[]).some(i=>String(i.ean)===codigo))).catch(()=>null),6000));
+    const rs=await Promise.all(['https://www.farmacity.com','https://www.carrefour.com.ar'].map(pedir));
     let res=null;
     for(const a of rs){ const p=a&&a[0]; if(!p) continue; const items=p.items||[]; const it=items.find(x=>String(x.ean)===codigo)||items[0]||{};
       let nombre=String(it.nameComplete||p.productName||'').trim(); if(items.length>1&&it.name&&!nombre.includes(it.name)) nombre+=' '+it.name;
@@ -920,7 +941,7 @@ async function completarDesdeCatalogo(){
   const [t,r0]=await Promise.all([buscarEnTiendas(codigo),buscarProductoExterno(codigo)]);
   const r=t&&t.nombre?t:r0;
   if(!enIngreso()) return;
-  buscarFotos(codigo,t&&t.imagen).then(fs=>{ if(V!==vista||vista.f.foto||!fs.length) return; vista.f._imgs=fs; vista.f._img=fs[0]; pintarFoto(vista); });
+  vista.f._buscandoFotos=1; pintarFoto(vista); buscarFotos(codigo,t&&t.imagen).then(fs=>{ vista.f._buscandoFotos=0; if(V!==vista||vista.f.foto) return; if(fs.length){ vista.f._imgs=fs; vista.f._img=fs[0]; } else vista.f._sinFotos=1; pintarFoto(vista); });
   if(r){ if(!V.f.nombre) V.f.nombre=r.nombre; if(!V.f.marca) V.f.marca=r.marca; V.f._cat='ok'; V.f._fuente=r.fuente;
     if(r.categoria) V.f._categoria=r.categoria; if(r.imagen) V.f._img=r.imagen; }
   else V.f._cat='no';
@@ -1346,7 +1367,8 @@ function fotoHTML(f){
     <div class="opciones">${f._imgs.map((u,i)=>`<button type="button" class="opc" data-act="usarFotoTienda" data-url="${esc(u)}" aria-label="Usar la foto ${i+1}"><img src="${esc(u)}" alt="" referrerpolicy="no-referrer" onerror="this.closest('.opc').remove()"></button>`).join('')}</div>
     <div class="btns2"><button type="button" class="btn" data-act="foto">${ico('cam',18)}Sacar foto</button><button type="button" class="btn" data-act="galeria">Elegir de la galería</button></div>${gal}</div>`;
   if(!f.foto&&f._img) return `<div class="tienda"><img src="${esc(f._img)}" alt="Foto del producto" referrerpolicy="no-referrer"><div><b>Encontré una foto</b><span>¿Usás esta o sacás otra?</span><div class="btns2"><button type="button" class="btn pri" data-act="usarFotoTienda">Usar esta</button><button type="button" class="btn" data-act="foto">${ico('cam',18)}Sacar otra</button></div></div></div>`;
-  if(!f.foto) return `<button type="button" class="drop" data-act="foto">${ico('cam',22)}Sacar foto</button><button type="button" class="link" style="align-self:center;padding:6px 0" data-act="galeria">o elegila de la galería</button>${gal}`;
+  const nota=f._buscandoFotos?`<p class="status"><svg class="spin" viewBox="0 0 100 100" aria-hidden="true"><path d="${SOL}" fill="#a35e47"/></svg>Buscando fotos del producto…</p>`:f._sinFotos?`<p class="status muted">No encontré fotos de este producto.</p>`:'';
+  if(!f.foto) return `${nota}<button type="button" class="drop" data-act="foto">${ico('cam',22)}Sacar foto</button><button type="button" class="link" style="align-self:center;padding:6px 0" data-act="galeria">o elegila de la galería</button>${gal}`;
   const estado=f._bg?`<span class="tag" style="align-self:flex-start;display:inline-flex;gap:6px;align-items:center"><svg class="spin" viewBox="0 0 100 100" aria-hidden="true" style="width:14px;height:14px;margin:0"><path d="${SOL}" fill="#a35e47"/></svg>${esc(f._bg)}</span>`:'';
   const alt=!f._bg&&f._orig?`<button type="button" class="link" style="padding:4px 0" data-act="fotoAlterna">${f._sinFondo?'Usar la foto original':'Sacarle el fondo'}</button>`:'';
   const aj=!f._bg&&f._blob?`<button type="button" class="link" style="padding:4px 0" data-act="ajustar">Ajustar recorte</button>`:'';
