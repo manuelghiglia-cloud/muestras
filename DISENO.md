@@ -95,3 +95,12 @@ Bloqueos: sin caja → aviso y foco en el selector; búsquedas en curso → "Esp
 - `aria-selected` en el segmentado, `aria-pressed` en chips.
 - Movimiento reducido: sin animación de entrada en `.linea.nuevo`.
 - Cada lectura se anuncia a lectores de pantalla (`#camOk` con `role=status`, `aria-live=polite`).
+
+## Formato de nombre y marca
+
+Todo producto se muestra igual, venga del código de barras o se escriba a mano (`ordenarProducto` en index.html):
+
+- **Marca** en Tipo Título: `DOVE` → `Dove`. Si ya viene con mayúsculas a propósito (`L'Oréal Paris`, `e.l.f.`) se respeta.
+- **Nombre** sin la marca, en Tipo Título, con las palabras chicas en minúscula (de, con, para, x…): `SHAMPOO DOVE RECONSTRUCCION X 400ML` → `Shampoo Reconstrucción 400 ml`.
+- **Siglas** en mayúscula: FPS, UV, BB, XG, Q10. `SPF 50` se escribe `FPS 50`. `pH` queda así.
+- **Contenido** siempre al final, con espacio y unidad corta: `400 ml`, `1,5 l`, `90 g`, `1 kg`, `30 u.`.
