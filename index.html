@@ -385,6 +385,16 @@ body.escaneo .toast{background:#fff;color:#000}
 @keyframes aparece{from{opacity:0;transform:translateY(12px)}}
 .pend-card{background:var(--acc-soft);border-radius:28px;padding:16px;display:flex;flex-direction:column;gap:12px}
 @media (prefers-reduced-motion:reduce){.ola,.chispa,.ok-ring{animation:none!important}.ok-check{stroke-dashoffset:0}}
+.sw{position:relative;overflow:hidden;border-radius:18px;touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.sw-acts{opacity:0}.sw.drag .sw-acts,.sw.abierto .sw-acts,.sw.chau .sw-acts{opacity:1}
+.sw + .sw{margin-top:4px}
+.sw .sw-fr{position:relative;z-index:1;transform:translateX(0);transition:transform .35s var(--spring);touch-action:pan-y}
+.sw.drag .sw-fr{transition:none}
+.sw-acts{position:absolute;top:0;right:0;bottom:0;display:flex;gap:0}
+.sw-b{border:0;min-width:88px;padding:0 10px;color:#fff;font:800 13px/1.15 var(--f);cursor:pointer}
+.sw-b.gris{background:#6f6d6d}.sw-b.rojo{background:var(--red)}
+.sw-b:first-child{border-radius:18px 0 0 18px}.sw-b:last-child{border-radius:0 18px 18px 0}
+.sw.chau{transition:height .3s cubic-bezier(.2,0,0,1),opacity .3s,margin .3s;opacity:0}
 </style>
 </head>
 <body>
@@ -407,7 +417,7 @@ body.escaneo .toast{background:#fff;color:#000}
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-const APP_VERSION='202611131219';
+const APP_VERSION='202611131227';
 async function chequearVersion(){ try{ if(location.protocol==='file:') return; const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'}); const nueva=(await r.text()).trim();
   if(nueva&&nueva!==APP_VERSION){ const u=new URL(location.href); if(u.searchParams.get('v')===nueva) return; u.searchParams.set('v',nueva); location.replace(u.toString()); } }catch(e){} }
 chequearVersion();
@@ -443,7 +453,11 @@ const rid=(n=6)=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>'ABCDEF
 const plural=(n,a,b)=>n===1?`1 ${a}`:`${n} ${b}`;
 function faltaDe(p){ const f=[]; if(!p.foto) f.push('foto'); if(!(p.alto&&p.ancho&&p.prof)) f.push('medidas'); return f; }
 function textoFalta(f){ return f.length===2?'Falta la foto y las medidas':f[0]==='foto'?'Falta la foto':'Faltan las medidas'; }
-function fichasIncompletas(){ return [...S.productos.values()].filter(p=>totalDe(p.codigo)>0&&faltaDe(p).length).map(p=>p.codigo); }
+const OCULTOS_KEY='stock-no-completar';
+function ocultos(){ try{ return JSON.parse(localStorage.getItem(OCULTOS_KEY)||'[]'); }catch(e){ return []; } }
+function setOcultos(a){ try{ localStorage.setItem(OCULTOS_KEY,JSON.stringify(a)); }catch(e){} }
+function fichasIncompletasTodas(){ return [...S.productos.values()].filter(p=>totalDe(p.codigo)>0&&faltaDe(p).length).map(p=>p.codigo); }
+function fichasIncompletas(){ const o=ocultos(); return fichasIncompletasTodas().filter(c=>!o.includes(c)); }
 // Recorre una lista de fichas para completar, una por una (foto y medidas primero).
 function completarFichas(codigos,imgs){ if(!codigos.length) return; go('ingreso',{codigo:codigos[0],editar:1,cola:codigos.slice(1),imgs:imgs||{},total:codigos.length,i:1}); }
 function siguienteFicha(){ const p=V.p; borrarBorrador(); salir(); V=pila.pop()||{view:'inicio',p:{},f:{}};
@@ -821,10 +835,13 @@ porCompletar:{ html(){
   const l=porCompletar(); const fichas=l.filter(x=>x.tipo==='ficha'), ap=l.filter(x=>x.tipo==='apartado');
   return `${cabecera()}<h1 class="md">Por completar</h1><p class="sub">Lo que entró sin todos los datos. Completalo cuando puedas: lo demás ya quedó guardado.</p>
   ${fichas.length>1?`<button class="btn pri big" data-act="completarTodas">Completar las ${fichas.length} fichas, una atrás de otra</button>`:''}
-  ${fichas.length?`<div class="grp" style="margin-top:16px">${fichas.map(x=>{ const p=S.productos.get(x.codigo)||{}; return `<button class="row-p" data-go="ingreso" data-codigo="${esc(x.codigo)}" data-editar="1"><span class="ph">${fotoMini(p)}</span><span class="tx"><b>${esc(p.nombre||x.codigo)}</b><span class="falta-chip">${esc(textoFalta(x.falta))}</span></span>${ico('chev',18,'stroke:var(--ink-3)')}</button>`; }).join('')}</div>`:''}
-  ${ap.length?`<div class="sec"><h2>Sin datos</h2><span class="m">No los encontré por el código</span></div><div class="grp">${ap.map(a=>`<div class="row-p" style="cursor:default"><span class="ph">${ico('prod',20,'stroke:var(--ink-3);stroke-width:2')}</span><span class="tx"><b>Código ${esc(a.codigo)}</b><span>${a.cant} ${a.cant===1?'unidad':'unidades'}${a.caja?` para ${esc(cajaNom(a.caja))}`:''}</span></span>
-    <button type="button" class="btn pri" style="flex:none;min-height:40px;padding:0 14px;font-size:14px" data-go="ingreso" data-codigo="${esc(a.codigo)}" data-caja="${esc(a.caja||'')}" data-cant="${a.cant}" data-apartado="1">Completar</button>
-    <button type="button" class="quitar" data-desapartar="${esc(a.codigo)}" data-caja="${esc(a.caja||'')}" aria-label="Descartar">${ico('x',16)}</button></div>`).join('')}</div>`:''}
+  ${l.length?`<p class="help" style="margin-top:14px">Deslizá un producto a la izquierda para quitarlo de la lista.</p>`:''}
+  ${fichas.length?`<div class="grp" style="margin-top:8px">${fichas.map(x=>{ const p=S.productos.get(x.codigo)||{}; return `<div class="sw" data-sw="ficha" data-codigo="${esc(x.codigo)}"><div class="sw-acts"><button type="button" class="sw-b gris" data-swact="ignorar">No completar</button><button type="button" class="sw-b rojo" data-swact="borrar">Borrar</button></div>
+    <button class="row-p sw-fr" data-go="ingreso" data-codigo="${esc(x.codigo)}" data-editar="1"><span class="ph">${fotoMini(p)}</span><span class="tx"><b>${esc(p.nombre||x.codigo)}</b><span class="falta-chip">${esc(textoFalta(x.falta))}</span></span>${ico('chev',18,'stroke:var(--ink-3)')}</button></div>`; }).join('')}</div>`:''}
+  ${ap.length?`<div class="sec"><h2>Sin datos</h2><span class="m">No los encontré por el código</span></div><div class="grp">${ap.map(a=>`<div class="sw" data-sw="apartado" data-codigo="${esc(a.codigo)}" data-caja="${esc(a.caja||'')}"><div class="sw-acts"><button type="button" class="sw-b rojo" data-swact="borrar">Borrar</button></div>
+    <div class="row-p sw-fr" style="cursor:default"><span class="ph">${ico('prod',20,'stroke:var(--ink-3);stroke-width:2')}</span><span class="tx"><b>Código ${esc(a.codigo)}</b><span>${a.cant} ${a.cant===1?'unidad':'unidades'}${a.caja?` para ${esc(cajaNom(a.caja))}`:''}</span></span>
+    <button type="button" class="btn pri" style="flex:none;min-height:40px;padding:0 14px;font-size:14px" data-go="ingreso" data-codigo="${esc(a.codigo)}" data-caja="${esc(a.caja||'')}" data-cant="${a.cant}" data-apartado="1">Completar</button></div></div>`).join('')}</div>`:''}
+  ${(()=>{ const n=ocultos().filter(c=>fichasIncompletasTodas().includes(c)).length; return n?`<div style="display:flex;justify-content:center;margin-top:10px"><button type="button" class="link" data-act="mostrarOcultos">${n===1?'1 producto que no vas a completar':n+' productos que no vas a completar'} · Mostrar</button></div>`:''; })()}
   ${!l.length?`<div class="empty"><b>Todo completo</b><p>Todas las fichas tienen foto y medidas.</p></div>`:''}`;
 }},
 
@@ -1428,6 +1445,11 @@ const ACCIONES={
   cambiarNombre(){ V.f.editNombre=1; V.f.minombre=miNombre; render(); setTimeout(()=>{ const i=$('#minombre'); if(i){ i.focus(); i.select(); } },50); },
   completarListo(){ const nuevos=(V.p.nuevos||[]).filter(c=>faltaDe(S.productos.get(c)||{}).length); V=pila.pop()||{view:'inicio',p:{},f:{}}; completarFichas(nuevos,V.p.imgs||{}); },
   quitarCaja(){ V.f.caja=''; pintarMov(); },
+  mostrarOcultos(){ setOcultos([]); render(); },
+  cancelarBorrar(){ V.f._borrar=null; overlay(null); },
+  async confirmarBorrar(){ const c=V.f._borrar; V.f._borrar=null; overlay(null); if(!c) return; const st=stockDe(c); if(!st.length){ render(); return; }
+    const d=await escribir('transaccion',[{tipo:'sacar',motivo:'descartar',items:st.map(x=>({codigo:c,cant:x.cant,desde:x.caja})),caja:'',nota:'Borrado desde Por completar',por:miNombre}],'Borrando…'); if(!d) return;
+    render(); toast('Producto borrado'); },
   esperarCaja(){ V.f.hojaDestino=0; V.f.esperandoCaja=1; pintarHojaDestino(); avisoCam('Apuntá al QR de la caja'); },
   cerrarDestino(){ V.f.hojaDestino=0; pintarHojaDestino(); },
   cerrarHoja(){ V.f.hoja=null; const y=window.scrollY; render(); window.scrollTo(0,y); },
@@ -1695,6 +1717,38 @@ function recuperarBorrador(){
   V={view:'ingreso',p:b.p||{},f:b.f||{}}; render(); toast('Recuperé lo que estabas cargando. Volvé a sacar la foto.');
   return true;
 }
+
+
+/* ============ Deslizar para quitar (como en iPhone) ============ */
+(function(){
+  let act=null;
+  const cerrarOtros=sw=>document.querySelectorAll('.sw.abierto').forEach(x=>{ if(x!==sw){ x.classList.remove('abierto'); x.querySelector('.sw-fr').style.transform=''; } });
+  document.addEventListener('pointerdown',e=>{ const fr=e.target.closest('.sw-fr'); if(!fr||e.button>0) return; const sw=fr.closest('.sw');
+    act={sw,fr,x0:e.clientX,y0:e.clientY,base:sw.classList.contains('abierto')?-sw.querySelector('.sw-acts').offsetWidth:0,dx:0,mov:false,id:e.pointerId}; },{passive:true});
+  document.addEventListener('pointermove',e=>{ if(!act||e.pointerId!==act.id) return; const dx=e.clientX-act.x0, dy=e.clientY-act.y0;
+    if(!act.mov){ if(Math.abs(dx)<8) return; if(Math.abs(dy)>Math.abs(dx)){ act=null; return; } act.mov=true; act.sw.classList.add('drag'); cerrarOtros(act.sw); try{ act.fr.setPointerCapture(act.id); }catch(_){} }
+    const w=act.sw.offsetWidth; let x=Math.min(0,act.base+dx); if(x<-w) x=-w; act.dx=x; act.fr.style.transform=`translateX(${x}px)`; },{passive:true});
+  const fin=e=>{ if(!act||e.pointerId!==act.id) return; const a=act; act=null; if(!a.mov) return;
+    a.sw.classList.remove('drag'); a.sw._recien=Date.now(); const aw=a.sw.querySelector('.sw-acts').offsetWidth, w=a.sw.offsetWidth;
+    if(a.dx<-w*0.6){ a.sw.classList.add('abierto'); a.fr.style.transform=`translateX(${-w}px)`; vibrar(15); const b=a.sw.querySelector('.sw-b:first-child'); setTimeout(()=>accionSw(a.sw,b.dataset.swact),120); return; }
+    if(a.dx<-aw*0.45){ a.sw.classList.add('abierto'); a.fr.style.transform=`translateX(${-aw}px)`; } else { a.sw.classList.remove('abierto'); a.fr.style.transform=''; } };
+  document.addEventListener('pointerup',fin); document.addEventListener('pointercancel',fin);
+  // Un toque en el producto abierto lo cierra, en vez de entrar a la ficha
+  document.addEventListener('click',e=>{ const sw=e.target.closest('.sw'); if(!sw) { if(document.querySelector('.sw.abierto')&&!e.target.closest('.sw-b')) cerrarOtros(null); return; }
+    if(sw._recien&&Date.now()-sw._recien<350){ e.preventDefault(); e.stopImmediatePropagation(); return; }
+    const b=e.target.closest('[data-swact]'); if(b){ e.preventDefault(); e.stopImmediatePropagation(); accionSw(sw,b.dataset.swact); return; }
+    if(sw.classList.contains('abierto')&&e.target.closest('.sw-fr')){ e.preventDefault(); e.stopImmediatePropagation(); sw.classList.remove('abierto'); sw.querySelector('.sw-fr').style.transform=''; } },true);
+})();
+function chauFila(sw,luego){ sw.style.height=sw.offsetHeight+'px'; void sw.offsetHeight; sw.classList.add('chau'); sw.style.height='0px'; sw.style.marginTop='0px'; setTimeout(luego,300); }
+function accionSw(sw,que){ const c=sw.dataset.codigo, tipo=sw.dataset.sw;
+  const volver=()=>{ sw.classList.remove('abierto'); sw.querySelector('.sw-fr').style.transform=''; };
+  if(tipo==='apartado'){ chauFila(sw,()=>{ quitarApartado(c,sw.dataset.caja); render(); toast('Código borrado de la lista'); }); return; }
+  if(que==='ignorar'){ chauFila(sw,()=>{ setOcultos([...new Set([...ocultos(),c])]); render(); toast('Listo: no te lo vuelvo a pedir'); }); return; }
+  const st=stockDe(c), u=st.reduce((a,x)=>a+x.cant,0), p=S.productos.get(c)||{};
+  V.f._borrar=c;
+  overlay(`<b style="font-size:22px">¿Borrar este producto?</b><p style="margin:10px 0 0;color:var(--ink-2)">${esc(p.nombre||c)}: se descarta${u===1?' la unidad':'n las '+u+' unidades'} de ${esc(st.map(x=>cajaNom(x.caja)).join(', '))}. La ficha queda en el historial.</p>
+   <div class="btns" style="margin-top:18px"><button class="btn" data-act="cancelarBorrar">Cancelar</button><button class="btn" style="background:var(--red);color:#fff" data-act="confirmarBorrar">Borrar</button></div>`);
+  volver(); }
 
 /* ============ Arranque ============ */
 if(!recuperarBorrador()) render();
