@@ -113,3 +113,4 @@ Todo producto se muestra igual, venga del código de barras o se escriba a mano 
 - **Agregar (carrito):** escáner en modo oscuro, contador que rebota, la última lectura destacada y la caja elegida al final, en una hoja con las cajas recientes o escaneando su QR. Termina en la pantalla "¡Listo!" con el check verde.
 - **Sacar, Mover y Devolver:** desde la ficha del producto, en una hoja; para varios productos, desde la caja.
 - **Foto oficial por defecto:** si el código trae foto de tienda se usa sola; solo si no hay se pide la del estudio.
+- **Deslizar a la izquierda** (como en iPhone): en Por completar, *No completar* / *Borrar*; en las cajas y en los resultados de búsqueda, *Mover* / *Borrar* (borra solo de esa caja, con confirmación). Deslizar hasta el final hace la acción principal.

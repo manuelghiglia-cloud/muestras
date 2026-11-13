@@ -388,6 +388,7 @@ body.escaneo .toast{background:#fff;color:#000}
 .sw{position:relative;overflow:hidden;border-radius:18px;touch-action:pan-y;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .sw-acts{opacity:0}.sw.drag .sw-acts,.sw.abierto .sw-acts,.sw.chau .sw-acts{opacity:1}
 .sw + .sw{margin-top:4px}
+.grp-h + .sw,.sw + .row-p{margin-top:4px}
 .sw .sw-fr{position:relative;z-index:1;transform:translateX(0);transition:transform .35s var(--spring);touch-action:pan-y}
 .sw.drag .sw-fr{transition:none}
 .sw-acts{position:absolute;top:0;right:0;bottom:0;display:flex;gap:0}
@@ -417,7 +418,7 @@ body.escaneo .toast{background:#fff;color:#000}
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-const APP_VERSION='202611131227';
+const APP_VERSION='202611131235';
 async function chequearVersion(){ try{ if(location.protocol==='file:') return; const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'}); const nueva=(await r.text()).trim();
   if(nueva&&nueva!==APP_VERSION){ const u=new URL(location.href); if(u.searchParams.get('v')===nueva) return; u.searchParams.set('v',nueva); location.replace(u.toString()); } }catch(e){} }
 chequearVersion();
@@ -760,7 +761,7 @@ function selectorCaja(campo,valor,{excepto,label}={}){
 }
 const fotoMini=p=>p&&p.foto?`<img src="${fotoUrl(p.foto)}" alt="" loading="lazy">`:ico('prod',20,'stroke:var(--ink-3);stroke-width:2');
 function filaProd(s,sub){ const p=S.productos.get(s.codigo)||{};
-  return `<button class="row-p" data-go="producto" data-codigo="${esc(s.codigo)}"><span class="ph">${fotoMini(p)}</span><span class="tx"><b>${esc(p.nombre||s.codigo)}</b>${sub?`<span>${sub}</span>`:''}</span><span class="qty">${s.cant}</span></button>`; }
+  return `<div class="sw" data-sw="caja" data-full="borrar" data-codigo="${esc(s.codigo)}" data-caja="${esc(s.caja)}"><div class="sw-acts"><button type="button" class="sw-b gris" data-swact="mover">Mover</button><button type="button" class="sw-b rojo" data-swact="borrar">Borrar</button></div><button class="row-p sw-fr" data-go="producto" data-codigo="${esc(s.codigo)}"><span class="ph">${fotoMini(p)}</span><span class="tx"><b>${esc(p.nombre||s.codigo)}</b>${sub?`<span>${sub}</span>`:''}</span><span class="qty">${s.cant}</span></button></div>`; }
 function grupoCaja(id,filas,{sub}={}){ const c=S.cajas.get(id)||{};
   return `<div class="grp"><button class="grp-h" data-go="caja" data-id="${esc(id)}"><b>${esc(cajaNom(id))}</b><span>${esc(c.lugar||'')}</span></button>${filas.map(s=>filaProd(s,sub?sub(s):esc(S.productos.get(s.codigo)?.marca||''))).join('')}</div>`; }
 const fab=(intent,texto)=>`${scanLabel(intent,'fab',`<span class="shape">${shape(GALLETA,44,'#a35e47')}<svg class="ico" width="20" height="20" viewBox="0 0 24 24"><path d="${I.scan}"/></svg></span>${esc(texto)}`)}`;
@@ -935,6 +936,7 @@ caja:{ html(){
   return `${cabecera(iconBtn(`data-go="etiqueta" data-id="${esc(V.p.id)}"`,'tag','Etiqueta')+iconBtn(`data-go="nuevaCaja" data-id="${esc(V.p.id)}"`,'edit','Editar caja'))}
   <p class="kicker">${esc(c.lugar||'Sin lugar')}</p><h1 class="md">${esc(c.nombre)}</h1>
   ${items.length?`<p class="stat-line"><b>${nprod}</b> ${nprod===1?'producto':'productos'}, <b>${unid}</b> ${unid===1?'unidad':'unidades'}</p>
+  <p class="help" style="margin-top:6px">Deslizá un producto a la izquierda para moverlo o borrarlo.</p>
   <div class="acts3">${[['sacar','Sacar','out'],['mover','Mover','arrow'],['devolver','Devolver','user']].map(([k,l,ic])=>`<button class="accion" data-mov="${k}" data-desde="${esc(V.p.id)}"><span class="bub">${ico(ic,18,'stroke:#fff')}</span>${l}</button>`).join('')}</div>`:''}
   ${items.length?`<div class="grp" style="margin-top:14px">${items.sort((a,b)=>prodNom(a.codigo).localeCompare(prodNom(b.codigo),'es')).map(s=>filaProd(s,esc(S.productos.get(s.codigo)?.marca||''))).join('')}</div>`
    :`<div class="empty"><b>Está vacía</b><p>Tocá “Agregar acá” y escaneá los productos que metas en esta caja.</p></div>`}
@@ -1447,7 +1449,9 @@ const ACCIONES={
   quitarCaja(){ V.f.caja=''; pintarMov(); },
   mostrarOcultos(){ setOcultos([]); render(); },
   cancelarBorrar(){ V.f._borrar=null; overlay(null); },
-  async confirmarBorrar(){ const c=V.f._borrar; V.f._borrar=null; overlay(null); if(!c) return; const st=stockDe(c); if(!st.length){ render(); return; }
+  async confirmarBorrar(){ const b=V.f._borrar; V.f._borrar=null; overlay(null); if(!b) return;
+    if(typeof b==='object'){ const d=await escribir('transaccion',[{tipo:'sacar',motivo:'descartar',items:[{codigo:b.codigo,cant:b.cant,desde:b.caja}],caja:'',nota:'Borrado de la caja',por:miNombre}],'Borrando…'); if(!d) return; const y=window.scrollY; render(); window.scrollTo(0,y); toast('Borrado de '+cajaNom(b.caja)); return; }
+    const c=b; const st=stockDe(c); if(!st.length){ render(); return; }
     const d=await escribir('transaccion',[{tipo:'sacar',motivo:'descartar',items:st.map(x=>({codigo:c,cant:x.cant,desde:x.caja})),caja:'',nota:'Borrado desde Por completar',por:miNombre}],'Borrando…'); if(!d) return;
     render(); toast('Producto borrado'); },
   esperarCaja(){ V.f.hojaDestino=0; V.f.esperandoCaja=1; pintarHojaDestino(); avisoCam('Apuntá al QR de la caja'); },
@@ -1730,7 +1734,7 @@ function recuperarBorrador(){
     const w=act.sw.offsetWidth; let x=Math.min(0,act.base+dx); if(x<-w) x=-w; act.dx=x; act.fr.style.transform=`translateX(${x}px)`; },{passive:true});
   const fin=e=>{ if(!act||e.pointerId!==act.id) return; const a=act; act=null; if(!a.mov) return;
     a.sw.classList.remove('drag'); a.sw._recien=Date.now(); const aw=a.sw.querySelector('.sw-acts').offsetWidth, w=a.sw.offsetWidth;
-    if(a.dx<-w*0.6){ a.sw.classList.add('abierto'); a.fr.style.transform=`translateX(${-w}px)`; vibrar(15); const b=a.sw.querySelector('.sw-b:first-child'); setTimeout(()=>accionSw(a.sw,b.dataset.swact),120); return; }
+    if(a.dx<-w*0.6){ a.sw.classList.add('abierto'); a.fr.style.transform=`translateX(${-w}px)`; vibrar(15); const que=a.sw.dataset.full||a.sw.querySelector('.sw-b:first-child').dataset.swact; setTimeout(()=>accionSw(a.sw,que),120); return; }
     if(a.dx<-aw*0.45){ a.sw.classList.add('abierto'); a.fr.style.transform=`translateX(${-aw}px)`; } else { a.sw.classList.remove('abierto'); a.fr.style.transform=''; } };
   document.addEventListener('pointerup',fin); document.addEventListener('pointercancel',fin);
   // Un toque en el producto abierto lo cierra, en vez de entrar a la ficha
@@ -1743,6 +1747,12 @@ function chauFila(sw,luego){ sw.style.height=sw.offsetHeight+'px'; void sw.offse
 function accionSw(sw,que){ const c=sw.dataset.codigo, tipo=sw.dataset.sw;
   const volver=()=>{ sw.classList.remove('abierto'); sw.querySelector('.sw-fr').style.transform=''; };
   if(tipo==='apartado'){ chauFila(sw,()=>{ quitarApartado(c,sw.dataset.caja); render(); toast('Código borrado de la lista'); }); return; }
+  if(tipo==='caja'){ volver(); const caja=sw.dataset.caja;
+    if(que==='mover'){ go('producto',{codigo:c}); V.f.hoja={tipo:'mover',cant:1,desde:caja}; render(); return; }
+    const x=stockDe(c).find(y=>y.caja===caja); if(!x) return; const p=S.productos.get(c)||{}, quedan=totalDe(c)-x.cant;
+    V.f._borrar={codigo:c,caja,cant:x.cant};
+    overlay(`<b style="font-size:22px">¿Borrar de ${esc(cajaNom(caja))}?</b><p style="margin:10px 0 0;color:var(--ink-2)">${esc(p.nombre||c)}: se descarta${x.cant===1?' la unidad':'n las '+x.cant+' unidades'} de esta caja.${quedan?` Quedan ${unidades(quedan)} en otras cajas.`:' La ficha queda en el historial.'}</p>
+     <div class="btns" style="margin-top:18px"><button class="btn" data-act="cancelarBorrar">Cancelar</button><button class="btn" style="background:var(--red);color:#fff" data-act="confirmarBorrar">Borrar</button></div>`); return; }
   if(que==='ignorar'){ chauFila(sw,()=>{ setOcultos([...new Set([...ocultos(),c])]); render(); toast('Listo: no te lo vuelvo a pedir'); }); return; }
   const st=stockDe(c), u=st.reduce((a,x)=>a+x.cant,0), p=S.productos.get(c)||{};
   V.f._borrar=c;
