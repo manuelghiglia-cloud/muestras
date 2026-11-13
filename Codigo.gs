@@ -400,7 +400,7 @@ function buscarEAN(ean) {
   const cache = CacheService.getScriptCache(), clave = 'ean2_' + ean;
   const guardado = cache.get(clave);
   if (guardado) { const g = JSON.parse(guardado); return g && g.nombre ? g : null; }
-  let res = null, sinFoto = null;
+  let res = null, sinFoto = null, contestaron = 0;
   [false, true].forEach(function (porTexto) {
     if (res) return;
     let resp = [];
@@ -408,6 +408,7 @@ function buscarEAN(ean) {
     for (let i = 0; i < resp.length && !res; i++) {
       try {
         if (resp[i].getResponseCode() !== 200) continue;
+        contestaron++;
         const p = leerProducto_(resp[i].getContentText(), ean, porTexto);
         if (!p) continue;
         p.fuente = TIENDAS_[i][0];
@@ -416,7 +417,8 @@ function buscarEAN(ean) {
     }
   });
   res = res || sinFoto;
-  try { cache.put(clave, JSON.stringify(res || {}), res ? 21600 : 1200); } catch (e) {}
+  // Si ninguna tienda contestó (sin internet, sin permiso) no se guarda: se vuelve a probar la próxima vez.
+  if (res || contestaron) { try { cache.put(clave, JSON.stringify(res || {}), res ? 21600 : 1200); } catch (e) {} }
   return res;
 }
 
@@ -454,6 +456,7 @@ function fotoDeTienda(url, nombre, reemplaza) {
 /** Para probar desde el editor (Ejecutar): busca un shampoo y un maquillaje y muestra el resultado.
  *  La primera vez Google te pide permiso para que el script se conecte a sitios externos. */
 function probarBusqueda() {
+  CacheService.getScriptCache().removeAll(['ean2_7891000359983', 'ean2_7501006721133']);
   Logger.log(JSON.stringify(diagTiendas('7790895000997'), null, 1));
   Logger.log(JSON.stringify(buscarEAN('7891000359983')));
   Logger.log(JSON.stringify(buscarEAN('7501006721133')));
