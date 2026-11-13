@@ -104,3 +104,12 @@ Todo producto se muestra igual, venga del código de barras o se escriba a mano 
 - **Nombre** sin la marca, en Tipo Título, con las palabras chicas en minúscula (de, con, para, x…): `SHAMPOO DOVE CERAMIDAS X 400ML` → `Shampoo Ceramidas 400 ml`.
 - **Siglas** en mayúscula: FPS, UV, BB, XG, Q10. `SPF 50` se escribe `FPS 50`. `pH` queda así.
 - **Contenido** siempre al final, con espacio y unidad corta: `400 ml`, `1,5 l`, `90 g`, `1 kg`, `30 u.`.
+
+## v3 · Mismo universo que Brief POP (13/11/2026)
+
+- **Carga:** mosaico de formas de la marca girando en ola, con STOCK DISEÑO y Micropack debajo.
+- **Inicio:** logo de Micropack Americas (`logo-micropack.svg`, el mismo de Brief POP), galleta terracota con la inicial (tocándola se cambia de usuario), "¡Hola, Nombre!" y "¿Qué buscamos hoy en el estudio?".
+- **Por completar:** una sola bandeja con fichas sin foto o medidas y códigos que no se encontraron.
+- **Agregar (carrito):** escáner en modo oscuro, contador que rebota, la última lectura destacada y la caja elegida al final, en una hoja con las cajas recientes o escaneando su QR. Termina en la pantalla "¡Listo!" con el check verde.
+- **Sacar, Mover y Devolver:** desde la ficha del producto, en una hoja; para varios productos, desde la caja.
+- **Foto oficial por defecto:** si el código trae foto de tienda se usa sola; solo si no hay se pide la del estudio.
