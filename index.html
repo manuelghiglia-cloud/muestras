@@ -163,6 +163,7 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 .search:focus-within{border-bottom-color:var(--acc)}
 .search input{flex:1;min-width:0;height:100%;border:0;background:transparent;font-size:16px;color:var(--ink);padding:0}
 .search input:focus{outline:none}
+.search input::placeholder{color:var(--ink3);text-transform:uppercase;letter-spacing:.04em;font-size:14px;font-weight:600}
 .search input::-webkit-search-cancel-button{-webkit-appearance:none}
 .search .x{border:0;background:var(--fill-2);width:40px;height:40px;border-radius:999px;display:flex;align-items:center;justify-content:center;cursor:pointer}
 .sec{display:flex;align-items:baseline;justify-content:space-between;gap:12px;margin-top:28px}
@@ -312,7 +313,7 @@ textarea.in{height:auto;min-height:80px;padding:12px 16px}
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-const APP_VERSION='202611131048';
+const APP_VERSION='202611131207';
 async function chequearVersion(){ try{ if(location.protocol==='file:') return; const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'}); const nueva=(await r.text()).trim();
   if(nueva&&nueva!==APP_VERSION){ const u=new URL(location.href); if(u.searchParams.get('v')===nueva) return; u.searchParams.set('v',nueva); location.replace(u.toString()); } }catch(e){} }
 chequearVersion();
@@ -581,7 +582,7 @@ function aplicar(d){
   if(!d||!d.cajas) return;
   S.rev=d.rev;
   S.cajas=new Map(d.cajas.map(c=>[c.id,c]));
-  S.productos=new Map(d.productos.map(p=>[p.codigo,p]));
+  S.productos=new Map(d.productos.map(p=>[p.codigo,ordenarProducto(p)]));
   S.stock=new Map(d.stock.map(x=>[x.codigo+'|'+x.caja,x]));
   S.movs=d.movs||[];
   S.prestamos=d.prestamos||[];
@@ -678,7 +679,7 @@ const VIEWS={
 inicio:{ html(){
   const q=V.f.q||'';
   return `<div class="head"><div><p class="kicker">Micropack</p><h1>Stock diseño</h1></div></div>
-  <div class="search">${ico('search',20,'stroke:#000;flex:none')}<label for="q" class="sr">Buscar muestras</label><input id="q" data-f="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="¿Tenemos…? Producto, marca o caja" value="${esc(q)}">${q?`<button class="x" data-act="limpiarQ" aria-label="Borrar búsqueda">${ico('plus',16,'transform:rotate(45deg)')}</button>`:''}</div>
+  <div class="search">${ico('search',20,'stroke:#000;flex:none')}<label for="q" class="sr">Buscar muestras</label><input id="q" data-f="q" type="search" enterkeyhint="search" autocomplete="off" placeholder="Producto, marca o campaña" value="${esc(q)}">${q?`<button class="x" data-act="limpiarQ" aria-label="Borrar búsqueda">${ico('plus',16,'transform:rotate(45deg)')}</button>`:''}</div>
   <div id="res">${q.trim()?resultados():cuerpoInicio()}</div><button type="button" class="fab" data-mov="ingresar"><span class="shape">${shape(GALLETA,44,'#a35e47')}<svg class="ico" width="20" height="20" viewBox="0 0 24 24"><path d="${I.scan}"/></svg></span>Agregar producto</button>`;
 }},
 
@@ -829,7 +830,7 @@ ingreso:{ html(){
   ${modoFichas?`<p class="kicker" style="margin-top:4px">Completá la ficha · ${V.p.i} de ${V.p.total}</p><h1 class="md">${esc(f.nombre||c)}</h1>`:`<h1 class="md">${ed?'Editar producto':'Producto nuevo'}</h1>`}
   ${modoFichas?fotoMedidasHTML(f,true):''}
   <div class="card">
-   <div class="f"><label for="nombre">Producto</label><input class="in" id="nombre" data-f="nombre" placeholder="Sedal Shampoo Ceramidas 340 ml" value="${esc(f.nombre)}" autocomplete="off">${status}<div id="fichaIn">${fichaHTML(f.nombre)}</div></div>
+   <div class="f"><label for="nombre">Producto</label><input class="in" id="nombre" data-f="nombre" placeholder="Shampoo Ceramidas 340 ml" value="${esc(f.nombre)}" autocomplete="off">${status}<div id="fichaIn">${fichaHTML(f.nombre)}</div></div>
    <div class="f"><label for="marca">Marca</label><input class="in" id="marca" data-f="marca" value="${esc(f.marca)}" autocomplete="off"></div>
   </div>
   ${ed||V.p.paraMov?'':`<div class="d-card">${selectorCaja('destino',f.destino,{label:'Dónde lo guardás'})}<div class="between" style="align-items:center"><span class="lbl">Cantidad</span>${stepper('cant',f.cant)}</div></div>`}
@@ -878,6 +879,48 @@ function textoMov(m0){ let m=m0;
   return `<li><span class="dot" style="background:${col}"></span><span><span style="font-size:14px">${txt}</span>${m.nota?`<span class="m" style="display:block">“${esc(m.nota)}”</span>`:''}<span class="m" style="display:block">${m.por?esc(m.por)+', ':''}${esc(cuando(m.at))}</span></span></li>`;
 }
 
+/* ============ Formato único de nombre y marca ============ */
+// Todo lo que llega del código de barras (o de lo que se escribió a mano) se muestra igual:
+// Marca en Tipo Título · Nombre en Tipo Título sin la marca · contenido al final ("400 ml", "90 g", "1,5 l", "30 u.").
+const ORD_SIGLAS=new Set(['fps','spf','uv','uva','uvb','bb','cc','dd','xl','xxl','xs','led','adn','dha','omega','ny','usa','tv','pvc','pet','abs','ok','xg','xxg','xxxg','rn']);
+const ORD_CHICAS=new Set(['de','del','la','las','el','los','con','sin','para','por','y','e','o','u','en','a','al','x','c/','s/']);
+const ORD_UNID={ml:'ml',cc:'ml',cm3:'ml',l:'l',lt:'l',lts:'l',ltr:'l',litro:'l',litros:'l',g:'g',gr:'g',grs:'g',gramo:'g',gramos:'g',kg:'kg',kgs:'kg',kilo:'kg',kilos:'kg',mg:'mg',oz:'oz',un:'u.',u:'u.',unid:'u.',unidad:'u.',unidades:'u.',ud:'u.',uds:'u.'};
+const ORD_MEDIDA=/(?:^|\s)(?:x\s*)?(\d+(?:[.,]\d+)?)\s*(ml|cc|cm3|ltr|lts|lt|litros?|l|grs|gramos?|gr|g|kgs|kilos?|kg|mg|oz|unidades|unidad|unid|uds|ud|un|u)\.?(?=\s|$|[,;)\/-])/gi;
+function ordLimpiar(s){ return String(s??'').replace(/[®™©]/g,'').replace(/_/g,' ').replace(/\s+/g,' ').replace(/^[\s\-–·,.]+|[\s\-–·,]+$/g,'').trim(); }
+function ordPalabra(w,primera){
+  const lo=w.toLowerCase(), base=lo.replace(/[^a-z0-9áéíóúüñ]/gi,'');
+  if(lo==='ph') return 'pH';
+  if(ORD_SIGLAS.has(base)) return w.toUpperCase();
+  if(/\d/.test(w)&&/[a-z]/i.test(w)) return w.toUpperCase();          // Q10, FPS50, B5, 3D
+  if(/^([a-z]\.){2,}$/i.test(w)) return w.toUpperCase();               // O.B.
+  if(!primera&&ORD_CHICAS.has(lo)) return lo;
+  return lo.replace(/(^|[-'’\/(])([a-záéíóúüñ])/g,(m,a,b)=>a+b.toUpperCase());
+}
+function ordTitulo(s){ return s.split(' ').filter(Boolean).map((w,i)=>ordPalabra(w,i===0)).join(' '); }
+function ordenarMarca(m){
+  m=ordLimpiar(m); if(!m) return '';
+  const mezcla=/[a-záéíóúñ]/.test(m)&&/[A-ZÁÉÍÓÚÑ]/.test(m);
+  return mezcla?m:ordTitulo(m);   // si la marca ya viene escrita a propósito (L'Oréal, e.l.f.) se respeta
+}
+function ordenarNombre(n,marca){
+  n=ordLimpiar(n); if(!n||/^\d{6,}$/.test(n)) return n;
+  // 1. contenido: se queda con la última medida y la normaliza
+  let cont=''; n=n.replace(ORD_MEDIDA,(m,num,u)=>{ cont=num.replace('.',',').replace(/,0+$/,'')+' '+ORD_UNID[u.toLowerCase()]; return ' '; });
+  n=n.replace(/\s+x\s*$/i,'').replace(/\bx\s*(\d+)\b/i,(m,k)=>{ if(!cont){ cont=k+' u.'; return ' '; } return m; });
+  n=n.replace(/\b(?:fps|spf)\s*\+?\s*(\d+)/gi,'FPS $1');
+  // 2. saca la marca del nombre (va aparte)
+  const mk=ordLimpiar(marca);
+  if(mk){ const sinAc=s=>s.normalize('NFD').replace(/[̀-ͯ]/g,'').toLowerCase();
+    const primera=mk.split(' ')[0];
+    for(const k of [mk,primera.length>=3?primera:'']){ if(!k) continue; const i=sinAc(n).indexOf(sinAc(k));
+      if(i>=0){ const resto=ordLimpiar(n.slice(0,i)+' '+n.slice(i+k.length)); if(resto.replace(/[^a-z]/gi,'').length>=3){ n=resto; break; } } } }
+  // 3. sin palabras repetidas seguidas y en Tipo Título
+  n=ordLimpiar(n.replace(/\b(\w+)(\s+\1\b)+/gi,'$1').replace(/\s*[-–,]\s*$/,'').replace(/\(\s*\)/g,''));
+  n=ordTitulo(n);
+  return cont?(n?n+' '+cont:cont):n;
+}
+function ordenarProducto(p){ if(!p) return p; const marca=ordenarMarca(p.marca); return {...p,marca,nombre:ordenarNombre(p.nombre,p.marca)}; }
+
 /* ============ Catálogo (Precios Claros, Carrefour, Farmacity, Open Food/Beauty Facts) ============ */
 const catCache={};
 async function buscarProductoExterno(codigo){
@@ -886,14 +929,14 @@ async function buscarProductoExterno(codigo){
   try{
     if(!catCache[sh]) catCache[sh]=fetch(CATALOGO_URL+sh+'.json').then(r=>r.ok?r.json():{}).catch(()=>({}));
     const t=await catCache[sh]; const x=t&&t[codigo];
-    if(x) return {nombre:x[0], marca:x[1]||'', fuente:'Precios Claros'};
+    if(x) return ordenarProducto({nombre:x[0], marca:x[1]||'', fuente:'Precios Claros'});
   }catch(e){}
   for(const [base,fuente] of [['https://world.openfoodfacts.org','Open Food Facts'],['https://world.openbeautyfacts.org','Open Beauty Facts']]){
     try{
       const r=await fetch(`${base}/api/v2/product/${codigo}.json?fields=product_name,product_name_es,brands,quantity`); if(!r.ok) continue;
       const j=await r.json(); const p=j&&j.product;
       if(j&&j.status===1&&p){ const n=String(p.product_name_es||p.product_name||'').trim();
-        if(n){ const q=String(p.quantity||'').trim(); return {nombre:q&&!norm(n).includes(norm(q))?n+' '+q:n, marca:String(p.brands||'').split(',')[0].trim(), fuente}; } }
+        if(n){ const q=String(p.quantity||'').trim(); return ordenarProducto({nombre:q&&!norm(n).includes(norm(q))?n+' '+q:n, marca:String(p.brands||'').split(',')[0].trim(), fuente}); } }
     }catch(e){}
   }
   return null;
@@ -911,7 +954,7 @@ function buscarVtex(codigo){
       let nombre=String(it.nameComplete||p.productName||'').trim(); if(items.length>1&&it.name&&!nombre.includes(it.name)) nombre+=' '+it.name;
       const imgs=(it.images||[]).slice(0,2).map(i=>i.imageUrl);
       if(!res) res={nombre,marca:String(p.brand||'').trim(),imgs}; else res.imgs.push(...imgs); }
-    return res;
+    return res&&ordenarProducto(res);
   })();
 }
 // Fotos del producto: prueba varias fuentes a la vez y devuelve hasta 4 opciones.
@@ -932,7 +975,7 @@ async function guardarFotoDeUrl(vista,url){
 async function buscarEnTiendas(codigo){
   if(!/^\d{8,14}$/.test(codigo)) return null;
   const [srv,dir]=await Promise.all([conTiempo(call('buscarEAN',codigo).catch(()=>null),9000),buscarVtex(codigo)]);
-  if(srv&&srv.nombre) return srv;
+  if(srv&&srv.nombre) return ordenarProducto(srv);
   return dir&&dir.nombre?{nombre:dir.nombre,marca:dir.marca,imagen:dir.imgs[0]||''}:null;
 }
 async function completarDesdeCatalogo(){
@@ -1251,7 +1294,7 @@ const ACCIONES={
     const f=V.f, ed=!!V.p.editar; const nombre=(f.nombre||'').trim(); if(!nombre){ toast('Escribí el nombre del producto.'); $('#nombre')?.focus(); return; }
     const cant=Math.max(1,parseInt(f.cant,10)||1); if(!ed&&!V.p.paraMov&&!f.destino){ toast('Elegí en qué caja la guardás.'); return; }
     const codigo=V.p.codigo||('MU-'+rid(5));
-    const producto={codigo,nombre,marca:(f.marca||'').trim(),cliente:(f.cliente||'').trim(),proyecto:(f.proyecto||'').trim(),alto:String(f.alto||'').trim(),ancho:String(f.ancho||'').trim(),prof:String(f.prof||'').trim(),peso:String(f.peso||'').trim(),foto:f.foto||''};
+    const producto={codigo,nombre:ordenarNombre(nombre,f.marca),marca:ordenarMarca(f.marca),cliente:(f.cliente||'').trim(),proyecto:(f.proyecto||'').trim(),alto:String(f.alto||'').trim(),ancho:String(f.ancho||'').trim(),prof:String(f.prof||'').trim(),peso:String(f.peso||'').trim(),foto:f.foto||''};
     if(V.p.cola){ const d=await escribir('guardarProducto',[producto,miNombre]); if(!d) return; siguienteFicha(); return; }
     if(V.p.paraMov){ const d=await escribir('guardarProducto',[producto,miNombre]); if(!d) return; borrarBorrador(); back(); if(V.view==='mov'){ const l=V.f.lineas.find(x=>x.codigo===codigo); if(l){ delete l.pend; delete l.img; } else agregarLinea(codigo,true); pintarLineas(); } toast(ed?'Listo':'Agregado a la lista'); return; }
     const d=ed?await escribir('guardarProducto',[producto,miNombre]):await escribir('ingresar',[{producto,nuevo:true,caja:f.destino,cant,por:miNombre}]);
