@@ -423,7 +423,7 @@ body.escaneo .toast{background:#fff;color:#000}
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-const APP_VERSION='202611131401';
+const APP_VERSION='202611131704';
 async function chequearVersion(){ try{ if(location.protocol==='file:') return; const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'}); const nueva=(await r.text()).trim();
   if(nueva&&nueva!==APP_VERSION){ const u=new URL(location.href); if(u.searchParams.get('v')===nueva) return; u.searchParams.set('v',nueva); location.replace(u.toString()); } }catch(e){} }
 chequearVersion();
@@ -844,6 +844,7 @@ devolver:{ html(){
 porCompletar:{ html(){
   const l=porCompletar(); const fichas=l.filter(x=>x.tipo==='ficha'), ap=l.filter(x=>x.tipo==='apartado');
   return `${cabecera()}<h1 class="md">Por completar</h1><p class="sub">Lo que entró sin todos los datos. Completalo cuando puedas: lo demás ya quedó guardado.</p>
+  ${fichas.some(x=>x.falta.includes('foto')&&/^\d{8,14}$/.test(x.codigo))?`<button class="btn acc" style="margin-top:14px;min-height:52px" data-act="buscarFotosOficiales">${ico('cam',20,'stroke:#fff')}Buscar las fotos oficiales que faltan</button>`:''}
   ${fichas.length>1?`<button class="btn pri big" data-act="completarTodas">Completar las ${fichas.length} fichas, una atrás de otra</button>`:''}
   ${l.length?`<p class="help" style="margin-top:14px">Deslizá un producto a la izquierda para quitarlo de la lista.</p>`:''}
   ${fichas.length?`<div class="grp" style="margin-top:8px">${fichas.map(x=>{ const p=S.productos.get(x.codigo)||{}; return `<div class="sw" data-sw="ficha" data-codigo="${esc(x.codigo)}"><div class="sw-acts"><button type="button" class="sw-b gris" data-swact="ignorar">No completar</button><button type="button" class="sw-b rojo" data-swact="borrar">Borrar</button></div>
@@ -1284,11 +1285,14 @@ async function resolverNuevo(vista,l){
     const r=t&&t.nombre?t:r0;
     if(r&&r.nombre&&miNombre){
       const d=await call('guardarProducto',{codigo,nombre:ordenarNombre(r.nombre,r.marca),marca:ordenarMarca(r.marca),peso:pesoDeNombre(ordenarNombre(r.nombre,r.marca)),cliente:clienteDeCaja(vista.f.caja)},miNombre); aplicar(d); delete l.pend; l.creado=1;
-      l.fotoGuardando=1; buscarFotos(codigo,r.imagen).then(async fs=>{
-        if(fs.length&&!(S.productos.get(codigo)||{}).foto){
-          try{ const tmp={p:{codigo},f:{}}; await guardarFotoDeUrl(tmp,fs[0]); const d2=await call('guardarProducto',{codigo,nombre:S.productos.get(codigo)?.nombre||r.nombre,foto:tmp.f.foto},miNombre); aplicar(d2); l.ofi=1; }
-          catch(e){ l.img=fs[0]; } }
-        delete l.fotoGuardando; if(V===vista) pintarLineas(); });
+      // La foto oficial la pone el servidor: sigue aunque cierres el escáner o la app.
+      l.fotoGuardando=1;
+      call('ponerFotoOficial',codigo).then(d2=>{ aplicar(d2); if((S.productos.get(codigo)||{}).foto) l.ofi=1; if(V!==vista) refrescar(); })
+        .catch(()=>buscarFotos(codigo,r.imagen).then(async fs=>{ // Apps Script viejo: lo hace el celular
+          if(fs.length&&!(S.productos.get(codigo)||{}).foto){
+            try{ const tmp={p:{codigo},f:{}}; await guardarFotoDeUrl(tmp,fs[0]); const d2=await call('guardarProducto',{codigo,nombre:S.productos.get(codigo)?.nombre||r.nombre,foto:tmp.f.foto},miNombre); aplicar(d2); l.ofi=1; }
+            catch(e){ l.img=fs[0]; } } }))
+        .finally(()=>{ delete l.fotoGuardando; if(V===vista) pintarLineas(); });
     } else l.pend='manual';
   }catch(e){ l.pend='manual'; }
   if(V===vista) pintarLineas();
@@ -1459,6 +1463,10 @@ const ACCIONES={
   completarListo(){ const nuevos=(V.p.nuevos||[]).filter(c=>faltaDe(S.productos.get(c)||{}).length); V=pila.pop()||{view:'inicio',p:{},f:{}}; completarFichas(nuevos,V.p.imgs||{}); },
   quitarCaja(){ V.f.caja=''; pintarMov(); },
   mostrarOcultos(){ setOcultos([]); render(); },
+  async buscarFotosOficiales(){ const cods=fichasIncompletas().filter(c=>!(S.productos.get(c)||{}).foto&&/^\d{8,14}$/.test(c)); if(!cods.length) return;
+    overlay(spinner(`Buscando ${cods.length===1?'la foto oficial':'las fotos oficiales de '+cods.length+' productos'}…`));
+    try{ const d=await call('fotosPendientes',cods); aplicar(d); overlay(null); render(); const n=d.fotosPuestas||0; toast(n?`Listo: ${n===1?'puse 1 foto oficial':'puse '+n+' fotos oficiales'}${n<cods.length?'. Las demás no están en las tiendas.':''}`:'No encontré fotos oficiales de estos productos.'); }
+    catch(e){ overlay(null); toast(/desconocida/.test(e.message)?'Actualizá el Apps Script para usar esto.':'No se pudo buscar las fotos.'); } },
   cancelarBorrar(){ V.f._borrar=null; overlay(null); },
   async confirmarBorrar(){ const b=V.f._borrar; V.f._borrar=null; overlay(null); if(!b) return;
     if(typeof b==='object'){ const d=await escribir('transaccion',[{tipo:'sacar',motivo:'descartar',items:[{codigo:b.codigo,cant:b.cant,desde:b.caja}],caja:'',nota:'Borrado de la caja',por:miNombre}],'Borrando…'); if(!d) return; const y=window.scrollY; render(); window.scrollTo(0,y); toast('Borrado de '+cajaNom(b.caja)); return; }
@@ -1487,7 +1495,9 @@ const ACCIONES={
     const d=await escribir('transaccion',[{tipo,items:f.lineas.map(l=>({codigo:l.codigo,cant:l.cant,desde:l.desde})),caja:f.caja,motivo,a:(f.a||'').trim(),hasta:f.hasta,nota:(f.nota||'').trim(),por:miNombre}]);
     if(!d) return;
     const nuevos=f.tipo==='ingresar'?f.lineas.filter(l=>l.creado&&faltaDe(S.productos.get(l.codigo)||{}).length):[]; const imgs={}; nuevos.forEach(l=>{ if(l.img) imgs[l.codigo]=l.img; });
-    if(f.tipo==='ingresar'){ const caja=f.caja; salir(); V=pila.pop()||{view:'inicio',p:{},f:{}};
+    if(f.tipo==='ingresar'){ const caja=f.caja; salir();
+      const sinFoto=nuevos.map(l=>l.codigo).filter(c=>/^\d{8,14}$/.test(c)&&!(S.productos.get(c)||{}).foto);
+      if(sinFoto.length) call('fotosPendientes',sinFoto).then(d=>{ aplicar(d); refrescar(); }).catch(()=>{}); V=pila.pop()||{view:'inicio',p:{},f:{}};
       go('listo',{texto:`Guardaste ${unidades(u)} en <b>${esc(cajaNom(caja))}</b>.${ap.length?` ${ap.length===1?'Un código quedó':ap.length+' códigos quedaron'} en Por completar.`:''}`,nuevos:nuevos.map(l=>l.codigo),imgs}); return; }
     toast({sacar:'Sacaste',mover:'Moviste',devolver:'Devolviste'}[verbo]+' '+unidades(u)); back();
   },

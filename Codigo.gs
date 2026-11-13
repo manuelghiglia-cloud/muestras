@@ -35,7 +35,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
-    const fns = { getData, guardarCaja, guardarProducto, ingresar, mover, transaccion, devolverPrestamo, subirFoto, historial, buscarEAN, fotoDeTienda, diagTiendas };
+    const fns = { getData, guardarCaja, guardarProducto, ingresar, mover, transaccion, devolverPrestamo, subirFoto, historial, buscarEAN, fotoDeTienda, diagTiendas, ponerFotoOficial, fotosPendientes };
     const fn = fns[body.fn];
     if (!fn) throw new Error('Función desconocida: ' + body.fn);
     return json_(fn.apply(null, body.args || []));
@@ -451,6 +451,45 @@ function fotoDeTienda(url, nombre, reemplaza) {
     if (!enUso) tirarFoto_(reemplaza);
   }
   return { id: file.getId() };
+}
+
+/* ============ Foto oficial en segundo plano ============
+ * Busca la foto oficial por código de barras, la guarda en la carpeta de fotos y se la pone al producto.
+ * Lo hace el servidor: aunque el celular cierre la app, la foto queda puesta. */
+function fotoOficial_(codigo) {
+  codigo = String(codigo || '');
+  if (!/^\d{8,14}$/.test(codigo)) return false;                       // códigos internos MU-… no tienen foto en tiendas
+  const p = filas_('Productos').filter(function (x) { return x.codigo === codigo; })[0];
+  if (!p || p.foto) return false;
+  const cache = CacheService.getScriptCache();
+  if (cache.get('sinfoto_' + codigo)) return false;                    // ya se buscó hace poco y no había
+  const r = buscarEAN(codigo);
+  if (!r || !r.imagen) { cache.put('sinfoto_' + codigo, '1', 3600); return false; }
+  let id = '';
+  const urls = [r.imagen].concat(r.imagenes || []);
+  for (let i = 0; i < urls.length && !id; i++) { try { id = fotoDeTienda(urls[i], 'muestra-' + codigo + '-oficial.jpg').id; } catch (e) {} }
+  if (!id) return false;
+  let puesta = false;
+  conCandado_(function () {
+    const ahora = filas_('Productos').filter(function (x) { return x.codigo === codigo; })[0];
+    if (ahora && !ahora.foto) { upsertProducto_({ codigo: codigo, nombre: ahora.nombre, foto: id }, ''); puesta = true; }
+  });
+  if (!puesta) tirarFoto_(id);                                         // alguien ya le puso foto mientras tanto
+  return puesta;
+}
+
+/** Pone la foto oficial a un producto (si no tiene). Devuelve los datos actualizados. */
+function ponerFotoOficial(codigo) { fotoOficial_(codigo); return getData(); }
+
+/** Pone la foto oficial a varios productos sin foto. Sin lista, revisa todos los que no tienen foto.
+ *  Corta a los 4 minutos para no pasarse del tiempo de Google. */
+function fotosPendientes(codigos) {
+  const inicio = Date.now();
+  let lista = codigos && codigos.length ? codigos.map(String)
+    : filas_('Productos').filter(function (p) { return !p.foto; }).map(function (p) { return p.codigo; });
+  let n = 0;
+  for (let i = 0; i < lista.length && Date.now() - inicio < 240000; i++) { try { if (fotoOficial_(lista[i])) n++; } catch (e) {} }
+  const d = getData(); d.fotosPuestas = n; return d;
 }
 
 /** Para probar desde el editor (Ejecutar): busca un shampoo y un maquillaje y muestra el resultado.
