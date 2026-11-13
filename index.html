@@ -395,6 +395,9 @@ body.escaneo .toast{background:#fff;color:#000}
 .sw-b{border:0;min-width:88px;padding:0 10px;color:#fff;font:800 13px/1.15 var(--f);cursor:pointer}
 .sw-b.gris{background:#6f6d6d}.sw-b.rojo{background:var(--red)}
 .sw-b:first-child{border-radius:18px 0 0 18px}.sw-b:last-child{border-radius:0 18px 18px 0}
+.in.falta{box-shadow:inset 0 0 0 2px var(--red);border-bottom-color:var(--red)}
+.drop.falta{border-color:var(--red);color:var(--red)}
+.auto{font-weight:600;color:var(--acc-ink)}
 .sw.chau{transition:height .3s cubic-bezier(.2,0,0,1),opacity .3s,margin .3s;opacity:0}
 </style>
 </head>
@@ -418,7 +421,7 @@ body.escaneo .toast{background:#fff;color:#000}
 
 <script src="https://cdn.jsdelivr.net/npm/qrcode-generator@1.4.4/qrcode.js"></script>
 <script>
-const APP_VERSION='202611131345';
+const APP_VERSION='202611131358';
 async function chequearVersion(){ try{ if(location.protocol==='file:') return; const r=await fetch('version.txt?t='+Date.now(),{cache:'no-store'}); const nueva=(await r.text()).trim();
   if(nueva&&nueva!==APP_VERSION){ const u=new URL(location.href); if(u.searchParams.get('v')===nueva) return; u.searchParams.set('v',nueva); location.replace(u.toString()); } }catch(e){} }
 chequearVersion();
@@ -452,7 +455,11 @@ const norm=s=>String(s??'').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g,''
 const keyOf=s=>String(s).replace(/[^A-Za-z0-9_\-.~:@+]/g,'-').slice(0,150);
 const rid=(n=6)=>Array.from(crypto.getRandomValues(new Uint8Array(n)),b=>'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[b%32]).join('');
 const plural=(n,a,b)=>n===1?`1 ${a}`:`${n} ${b}`;
-function faltaDe(p){ const f=[]; if(!p.foto) f.push('foto'); if(!(p.alto&&p.ancho&&p.prof)) f.push('medidas'); return f; }
+function faltaDe(p){ const f=[]; if(!p.foto) f.push('foto'); if(!(p.alto&&p.ancho&&p.prof&&p.peso)) f.push('medidas'); return f; }
+// Peso a partir del contenido del envase: "41,5 g", "112 grs", "1 kg" → gramos. (Los ml no se pasan: no pesan lo mismo.)
+function pesoDeNombre(n){ const m=String(n||'').match(/(\d+(?:[.,]\d+)?)\s*(kgs?|kilos?|grs?|gramos?|g)\b/i); if(!m) return '';
+  let v=parseFloat(m[1].replace(',','.')); if(!v) return ''; if(/^k/i.test(m[2])) v*=1000; return String(Math.round(v*10)/10).replace('.',','); }
+function autoPeso(f){ if(f.peso&&f.peso!==f._pesoAuto) return false; const p=pesoDeNombre(f.nombre); if(!p||p===f.peso) return false; f.peso=p; f._pesoAuto=p; return true; }
 function textoFalta(f){ return f.length===2?'Falta la foto y las medidas':f[0]==='foto'?'Falta la foto':'Faltan las medidas'; }
 const OCULTOS_KEY='stock-no-completar';
 function ocultos(){ try{ return JSON.parse(localStorage.getItem(OCULTOS_KEY)||'[]'); }catch(e){ return []; } }
@@ -464,9 +471,9 @@ function completarFichas(codigos,imgs){ if(!codigos.length) return; go('ingreso'
 function siguienteFicha(){ const p=V.p; borrarBorrador(); salir(); V=pila.pop()||{view:'inicio',p:{},f:{}};
   if(p.cola&&p.cola.length) go('ingreso',{codigo:p.cola[0],editar:1,cola:p.cola.slice(1),imgs:p.imgs,total:p.total,i:p.i+1});
   else { render(); toast('Fichas listas'); } }
-function fotoMedidasHTML(f,principal){ return `<div class="card"${principal?' style="margin-top:14px"':''}><span class="lbl">Foto y medidas${principal?'':' <span class="opt">(opcional)</span>'}</span>
+function fotoMedidasHTML(f,principal){ autoPeso(f); const fa=f._faltan||[]; return `<div class="card"${principal?' style="margin-top:14px"':''}><span class="lbl">Foto y medidas</span>
    <div id="fotoZona" style="display:flex;flex-direction:column;gap:10px">${fotoHTML(f)}</div>
-   <div class="grid2">${[['alto','Alto (mm)'],['ancho','Ancho (mm)'],['prof','Profundidad (mm)'],['peso','Peso (g)']].map(([k,l])=>`<div class="f"><label for="${k}" style="font-size:12.5px;font-weight:700;color:var(--ink-2)">${l}</label><input class="in" id="${k}" data-f="${k}" inputmode="decimal" value="${esc(f[k])}"></div>`).join('')}</div>
+   <div class="grid2">${[['alto','Alto (mm)'],['ancho','Ancho (mm)'],['prof','Profundidad (mm)'],['peso','Peso (g)']].map(([k,l])=>`<div class="f"><label for="${k}" style="font-size:12.5px;font-weight:700;color:var(--ink-2)">${l}${k==='peso'&&f.peso&&f.peso===f._pesoAuto?' <span class="auto">· del envase</span>':''}</label><input class="in${fa.includes(k)?' falta':''}" id="${k}" data-f="${k}" inputmode="decimal" value="${esc(f[k])}"></div>`).join('')}</div>
   </div>`; }
 async function correrDiag(vista){
   const f=vista.f; f.res={}; const pinta=()=>{ if(V===vista) render(); };
@@ -1274,7 +1281,7 @@ async function resolverNuevo(vista,l){
     const [t,r0]=await Promise.all([buscarEnTiendas(codigo),buscarProductoExterno(codigo)]);
     const r=t&&t.nombre?t:r0;
     if(r&&r.nombre&&miNombre){
-      const d=await call('guardarProducto',{codigo,nombre:r.nombre,marca:r.marca||'',cliente:clienteDeCaja(vista.f.caja)},miNombre); aplicar(d); delete l.pend; l.creado=1;
+      const d=await call('guardarProducto',{codigo,nombre:ordenarNombre(r.nombre,r.marca),marca:ordenarMarca(r.marca),peso:pesoDeNombre(ordenarNombre(r.nombre,r.marca)),cliente:clienteDeCaja(vista.f.caja)},miNombre); aplicar(d); delete l.pend; l.creado=1;
       l.fotoGuardando=1; buscarFotos(codigo,r.imagen).then(async fs=>{
         if(fs.length&&!(S.productos.get(codigo)||{}).foto){
           try{ const tmp={p:{codigo},f:{}}; await guardarFotoDeUrl(tmp,fs[0]); const d2=await call('guardarProducto',{codigo,nombre:S.productos.get(codigo)?.nombre||r.nombre,foto:tmp.f.foto},miNombre); aplicar(d2); l.ofi=1; }
@@ -1506,6 +1513,10 @@ const ACCIONES={
   async guardarIngreso(){
     if(V.f._bgP&&V.f._bg){ const vista=V; overlay(spinner('Terminando la foto…')); await Promise.race([vista.f._bgP,new Promise(r=>setTimeout(r,30000))]); overlay(null); if(V!==vista) return; }
     const f=V.f, ed=!!V.p.editar; const nombre=(f.nombre||'').trim(); if(!nombre){ toast('Escribí el nombre del producto.'); $('#nombre')?.focus(); return; }
+    autoPeso(f); const faltan=[...(f.foto?[]:['foto']),...['alto','ancho','prof','peso'].filter(k=>!String(f[k]||'').trim())];
+    if(faltan.length){ f._faltan=faltan; const nom={foto:'la foto',alto:'el alto',ancho:'el ancho',prof:'la profundidad',peso:'el peso'}; const l=faltan.map(k=>nom[k]);
+      const y=window.scrollY; render(); window.scrollTo(0,y); toast((l.length>1?'Faltan ':'Falta ')+(l.length>1?l.slice(0,-1).join(', ')+' y '+l.at(-1):l[0])+'.'); (faltan[0]==='foto'?$('.drop'):$('#'+faltan[0]))?.scrollIntoView({block:'center',behavior:'smooth'}); return; }
+    f._faltan=null;
     const cant=Math.max(1,parseInt(f.cant,10)||1); if(!ed&&!V.p.paraMov&&!f.destino){ toast('Elegí en qué caja la guardás.'); return; }
     const codigo=V.p.codigo||('MU-'+rid(5));
     const producto={codigo,nombre:ordenarNombre(nombre,f.marca),marca:ordenarMarca(f.marca),cliente:(f.cliente||'').trim(),proyecto:(f.proyecto||'').trim(),alto:String(f.alto||'').trim(),ancho:String(f.ancho||'').trim(),prof:String(f.prof||'').trim(),peso:String(f.peso||'').trim(),foto:f.foto||''};
@@ -1579,6 +1590,8 @@ document.addEventListener('input',e=>{
   if(k==='q'){ $('#res').innerHTML=resultados(); }
   if(V.view==='mov'&&k==='buscar'){ const sg=$('#movSug'); if(sg) sg.innerHTML=movSug(); }
   if(k==='nombre'&&$('#fichaIn')) $('#fichaIn').innerHTML=fichaHTML(t.value);
+  if(k==='nombre'&&autoPeso(V.f)){ const pe=$('#peso'); if(pe){ pe.value=V.f.peso; pe.classList.remove('falta'); } }
+  if(V.f._faltan&&V.f._faltan.includes(k)){ V.f._faltan=V.f._faltan.filter(x=>x!==k); t.classList.remove('falta'); }
 });
 document.addEventListener('change',e=>{
   if(e.target.id==='h_hacia'&&V.f.hoja){ V.f.hoja.hacia=e.target.value; const y=window.scrollY; render(); window.scrollTo(0,y); return; }
@@ -1636,7 +1649,7 @@ function fotoHTML(f){
     <div class="btns2"><button type="button" class="btn" data-act="foto">${ico('cam',18)}Sacar foto</button><button type="button" class="btn" data-act="galeria">Elegir de la galería</button></div>${gal}</div>`;
   if(!f.foto&&f._img) return `<div class="tienda"><img src="${esc(f._img)}" alt="Foto del producto" referrerpolicy="no-referrer"><div><b>Encontré una foto</b><span>¿Usás esta o sacás otra?</span><div class="btns2"><button type="button" class="btn pri" data-act="usarFotoTienda">Usar esta</button><button type="button" class="btn" data-act="foto">${ico('cam',18)}Sacar otra</button></div></div></div>`;
   const nota=f._buscandoFotos?`<p class="status"><svg class="spin" viewBox="0 0 100 100" aria-hidden="true"><path d="${SOL}" fill="#a35e47"/></svg>Buscando fotos del producto…</p>`:f._sinFotos?`<p class="status muted">No encontré fotos de este producto.</p>`:'';
-  if(!f.foto) return `${nota}<button type="button" class="drop" data-act="foto">${ico('cam',22)}Sacar foto</button><button type="button" class="link" style="align-self:center;padding:6px 0" data-act="galeria">o elegila de la galería</button>${gal}`;
+  if(!f.foto) return `${nota}<button type="button" class="drop${(f._faltan||[]).includes('foto')?' falta':''}" data-act="foto">${ico('cam',22)}Sacar foto</button><button type="button" class="link" style="align-self:center;padding:6px 0" data-act="galeria">o elegila de la galería</button>${gal}`;
   const estado=f._bg?`<span class="tag" style="align-self:flex-start;display:inline-flex;gap:6px;align-items:center"><svg class="spin" viewBox="0 0 100 100" aria-hidden="true" style="width:14px;height:14px;margin:0"><path d="${SOL}" fill="#a35e47"/></svg>${esc(f._bg)}</span>`:'';
   const alt=!f._bg&&f._orig?`<button type="button" class="link" style="padding:4px 0" data-act="fotoAlterna">${f._sinFondo?'Usar la foto original':'Sacarle el fondo'}</button>`:'';
   const aj=!f._bg&&f._blob?`<button type="button" class="link" style="padding:4px 0" data-act="ajustar">Ajustar recorte</button>`:'';
