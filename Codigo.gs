@@ -35,7 +35,7 @@ function doGet(e) {
 function doPost(e) {
   try {
     const body = JSON.parse(e.postData.contents);
-    const fns = { getData, guardarCaja, guardarProducto, ingresar, mover, transaccion, devolverPrestamo, subirFoto, historial, buscarEAN, fotoDeTienda };
+    const fns = { getData, guardarCaja, guardarProducto, ingresar, mover, transaccion, devolverPrestamo, subirFoto, historial, buscarEAN, fotoDeTienda, diagTiendas };
     const fn = fns[body.fn];
     if (!fn) throw new Error('Función desconocida: ' + body.fn);
     return json_(fn.apply(null, body.args || []));
@@ -348,45 +348,89 @@ function devolverPrestamo(d) {
 }
 
 
-/* ============ Búsqueda del código en tiendas online (Carrefour y Farmacity) ============
- * Las dos tiendas tienen un catálogo público que se puede consultar por código de barras.
- * Carrefour cubre súper y perfumería; Farmacity (con Get The Look y Simplicity) cubre
- * farmacia, skin care, maquillaje y perfumes. Los resultados se guardan 6 horas en caché. */
+/* ============ Búsqueda del código en tiendas online ============
+ * Súper: Carrefour, Jumbo, Disco, Vea, Día y ChangoMás. Farmacia, skin care y maquillaje: Farmacity.
+ * Todas tienen un catálogo público (VTEX) que se puede consultar por código de barras.
+ * Primero se pregunta por el código exacto y, si nadie lo tiene, se hace una búsqueda por texto.
+ * Lo encontrado se guarda 6 horas en caché; lo no encontrado, solo 20 minutos. */
 const TIENDAS_ = [
+  ['Carrefour', 'https://www.carrefour.com.ar'],
   ['Farmacity', 'https://www.farmacity.com'],
-  ['Carrefour', 'https://www.carrefour.com.ar']
+  ['Jumbo', 'https://www.jumbo.com.ar'],
+  ['Día', 'https://diaonline.supermercadosdia.com.ar'],
+  ['Disco', 'https://www.disco.com.ar'],
+  ['Vea', 'https://www.vea.com.ar'],
+  ['ChangoMás', 'https://www.masonline.com.ar']
 ];
+const CABECERAS_ = {
+  'Accept': 'application/json',
+  'Accept-Language': 'es-AR,es;q=0.9',
+  'User-Agent': 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.0 Mobile/15E148 Safari/604.1'
+};
+
+function pedidosTiendas_(ean, porTexto) {
+  return TIENDAS_.map(function (t) {
+    const url = porTexto
+      ? t[1] + '/api/io/_v/api/intelligent-search/product_search/?query=' + ean + '&count=5'
+      : t[1] + '/api/catalog_system/pub/products/search?fq=alternateIds_Ean:' + ean;
+    return { url: url, muteHttpExceptions: true, followRedirects: true, headers: CABECERAS_ };
+  });
+}
+
+function leerProducto_(texto, ean, porTexto) {
+  let j = JSON.parse(texto);
+  const lista = porTexto ? (j && j.products) || [] : j || [];
+  for (let k = 0; k < lista.length; k++) {
+    const p = lista[k], items = p.items || [];
+    const it = items.filter(function (x) { return String(x.ean) === ean || (x.referenceId || []).some(function (r) { return String(r.Value) === ean; }); })[0];
+    if (porTexto && !it) continue;               // en la búsqueda por texto, solo si el código coincide
+    const item = it || items[0] || {};
+    const imgs = (item.images || []).map(function (i) { return i.imageUrl; }).filter(String);
+    let nombre = String(item.nameComplete || p.productName || '').trim();
+    if (items.length > 1 && item.name && nombre.indexOf(item.name) < 0) nombre += ' ' + item.name; // tono o variante
+    if (!nombre) continue;
+    return { nombre: nombre, marca: String(p.brand || '').trim(), imagen: imgs[0] || '', imagenes: imgs.slice(0, 4) };
+  }
+  return null;
+}
 
 function buscarEAN(ean) {
   ean = String(ean || '').replace(/\D/g, '');
   if (!/^\d{8,14}$/.test(ean)) return null;
-  const cache = CacheService.getScriptCache(), clave = 'ean_' + ean;
+  const cache = CacheService.getScriptCache(), clave = 'ean2_' + ean;
   const guardado = cache.get(clave);
   if (guardado) { const g = JSON.parse(guardado); return g && g.nombre ? g : null; }
-  const pedidos = TIENDAS_.map(function (t) {
-    return { url: t[1] + '/api/catalog_system/pub/products/search?fq=alternateIds_Ean:' + ean,
-             muteHttpExceptions: true, headers: { Accept: 'application/json' } };
+  let res = null, sinFoto = null;
+  [false, true].forEach(function (porTexto) {
+    if (res) return;
+    let resp = [];
+    try { resp = UrlFetchApp.fetchAll(pedidosTiendas_(ean, porTexto)); } catch (e) { return; }
+    for (let i = 0; i < resp.length && !res; i++) {
+      try {
+        if (resp[i].getResponseCode() !== 200) continue;
+        const p = leerProducto_(resp[i].getContentText(), ean, porTexto);
+        if (!p) continue;
+        p.fuente = TIENDAS_[i][0];
+        if (p.imagen) res = p; else if (!sinFoto) sinFoto = p;
+      } catch (e) {}
+    }
   });
-  let respuestas = [];
-  try { respuestas = UrlFetchApp.fetchAll(pedidos); } catch (e) { return null; }
-  let res = null;
-  for (let i = 0; i < respuestas.length && !res; i++) {
-    try {
-      if (respuestas[i].getResponseCode() !== 200) continue;
-      const lista = JSON.parse(respuestas[i].getContentText());
-      if (!lista || !lista.length) continue;
-      const p = lista[0];
-      const items = p.items || [];
-      const it = items.filter(function (x) { return String(x.ean) === ean; })[0] || items[0] || {};
-      const img = it.images && it.images[0] && it.images[0].imageUrl || '';
-      const cat = String((p.categories && p.categories[0]) || '').replace(/^\/|\/$/g, '').split('/').join(' › ');
-      let nombre = String(it.nameComplete || p.productName || '').trim();
-      if (items.length > 1 && it.name && nombre.indexOf(it.name) < 0) nombre += ' ' + it.name; // tono o variante
-      res = { nombre: nombre, marca: String(p.brand || '').trim(), categoria: cat, imagen: img, fuente: TIENDAS_[i][0] };
-    } catch (e) {}
-  }
-  try { cache.put(clave, JSON.stringify(res || {}), 21600); } catch (e) {}
+  res = res || sinFoto;
+  try { cache.put(clave, JSON.stringify(res || {}), res ? 21600 : 1200); } catch (e) {}
   return res;
+}
+
+/** Diagnóstico: qué le contesta cada tienda a Google. Lo usa la pantalla "Probar fotos" de la app. */
+function diagTiendas(ean) {
+  ean = String(ean || '7790895000997').replace(/\D/g, '');
+  let resp = [];
+  try { resp = UrlFetchApp.fetchAll(pedidosTiendas_(ean, false)); }
+  catch (e) { return [{ tienda: 'Todas', codigo: 0, txt: String(e && e.message || e).slice(0, 160) }]; }
+  return resp.map(function (r, i) {
+    const c = r.getResponseCode(); let txt = '';
+    try { const p = c === 200 ? leerProducto_(r.getContentText(), ean, false) : null; txt = p ? p.nombre + (p.imagen ? ' (con foto)' : '') : String(r.getContentText()).replace(/\s+/g, ' ').slice(0, 90); } catch (e) { txt = 'respuesta rara'; }
+    return { tienda: TIENDAS_[i][0], codigo: c, txt: txt };
+  });
 }
 
 /** Baja la foto del producto desde la tienda y la guarda en la carpeta de fotos. */
@@ -410,6 +454,7 @@ function fotoDeTienda(url, nombre, reemplaza) {
 /** Para probar desde el editor (Ejecutar): busca un shampoo y un maquillaje y muestra el resultado.
  *  La primera vez Google te pide permiso para que el script se conecte a sitios externos. */
 function probarBusqueda() {
+  Logger.log(JSON.stringify(diagTiendas('7790895000997'), null, 1));
+  Logger.log(JSON.stringify(buscarEAN('7891000359983')));
   Logger.log(JSON.stringify(buscarEAN('7501006721133')));
-  Logger.log(JSON.stringify(buscarEAN('3600531697426')));
 }
